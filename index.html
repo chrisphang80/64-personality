@@ -1,0 +1,3884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>64personality · 多维人格测评实验室</title>
+  <style>
+    /* ==========================================================================
+       1. 设计令牌与全局基础样式（零外部依赖，自适应全端设备）
+       ========================================================================== */
+    :root {
+      --bg-page: #f5f7fb;
+      --bg-card: rgba(255, 255, 255, 0.92);
+      --text-main: #0f172a;
+      --text-sub: #475569;
+      --text-muted: #64748b;
+      --border-soft: rgba(226, 232, 240, 0.88);
+      --shadow-sm: 0 4px 14px -2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 12px 32px -8px rgba(15, 23, 42, 0.08), 0 4px 12px -4px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 22px 48px -12px rgba(15, 23, 42, 0.14);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-pill: 9999px;
+
+      /* 五大测评专属主题色 */
+      --mbti64-primary: #3498DB;
+      --mbti64-dark: #1d6fa5;
+      --mbti64-soft: #eaf5fc;
+
+      --animal-primary: #B87333;
+      --animal-dark: #87501d;
+      --animal-soft: #faf1e6;
+
+      --love-primary: #E06377;
+      --love-dark: #b83d51;
+      --love-soft: #fcebf1;
+
+      --arch-primary: #7B3F9E;
+      --arch-dark: #582875;
+      --arch-soft: #f3eaf8;
+
+      --dual-primary: #2563EB;
+      --dual-dark: #1d4ed8;
+      --dual-soft: #ebf2fe;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    /* 背景柔和氛围光斑 */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(85px);
+      opacity: 0.42;
+      animation: floatOrb 13s ease-in-out infinite;
+    }
+    .orb-1 { top: -110px; left: -90px; width: 360px; height: 360px; background: #bae6fd; }
+    .orb-2 { top: 32%; right: -100px; width: 370px; height: 370px; background: #fbcfe8; animation-delay: -4.5s; }
+    .orb-3 { bottom: -130px; left: 26%; width: 420px; height: 420px; background: #ddd6fe; animation-delay: -9s; }
+
+    @keyframes floatOrb {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-22px) scale(1.04); }
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-enter {
+      animation: fadeSlideUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* ==========================================================================
+       2. 顶部粘性导航栏
+       ========================================================================== */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .nav-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 16px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #3498DB 0%, #7B3F9E 52%, #E06377 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(52, 152, 219, 0.28);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    @media (min-width: 720px) {
+      .brand-title { font-size: 17px; }
+      .brand-sub { display: block; }
+    }
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    @media (min-width: 640px) {
+      .nav-tabs { gap: 8px; }
+    }
+
+    .nav-tab {
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-sub);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 640px) {
+      .nav-tab { padding: 8px 14px; font-size: 13.5px; }
+    }
+
+    .nav-tab:hover {
+      background: rgba(241, 245, 249, 0.9);
+      color: var(--text-main);
+    }
+
+    .nav-tab.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+    }
+
+    .nav-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      background: #3498DB;
+      color: #fff;
+    }
+    .nav-tab.active .nav-badge {
+      background: #fff;
+      color: #0f172a;
+    }
+
+    /* ==========================================================================
+       3. 主容器与门户大厅（5大低多边形粉彩宽幅卡片）
+       ========================================================================== */
+    .main-wrap {
+      flex: 1;
+      width: 100%;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 20px 16px 52px;
+    }
+
+    @media (min-width: 640px) {
+      .main-wrap { padding: 32px 24px 68px; }
+    }
+
+    .portal-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 28px;
+    }
+
+    .portal-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      font-size: 12px;
+      font-weight: 800;
+      color: #2563EB;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 12px;
+    }
+
+    .portal-h1 {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+
+    @media (min-width: 640px) {
+      .portal-h1 { font-size: 35px; }
+    }
+
+    .portal-desc {
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+
+    .banner-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @media (min-width: 640px) {
+      .banner-stack { gap: 24px; }
+    }
+
+    .test-banner {
+      position: relative;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+      min-height: 215px;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .test-banner:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .banner-poly-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .banner-content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      padding: 22px 18px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 64%;
+    }
+
+    @media (min-width: 640px) {
+      .banner-content {
+        padding: 30px 36px;
+        max-width: 60%;
+      }
+    }
+
+    .banner-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .banner-cn-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.85);
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .banner-q-tag {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .banner-title {
+      font-size: 23px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 6px;
+    }
+
+    @media (min-width: 640px) {
+      .banner-title { font-size: 32px; }
+    }
+
+    .banner-sub-en {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #334155;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    @media (min-width: 640px) {
+      .banner-sub-en { font-size: 14.5px; margin-bottom: 20px; }
+    }
+
+    .banner-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (min-width: 640px) {
+      .banner-btn-group { gap: 10px; }
+    }
+
+    .banner-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    @media (min-width: 640px) {
+      .banner-cta {
+        padding: 11px 24px;
+        font-size: 13.5px;
+      }
+    }
+
+    .banner-cta:hover {
+      transform: scale(1.03);
+      filter: brightness(1.06);
+    }
+
+    .banner-demo-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 9px 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.88);
+      color: #1e293b;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+      transition: all 0.18s ease;
+    }
+
+    .banner-demo-btn:hover {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .banner-art {
+      position: relative;
+      z-index: 1;
+      width: 38%;
+      min-width: 140px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding-right: 4px;
+      pointer-events: none;
+    }
+
+    @media (min-width: 640px) {
+      .banner-art {
+        width: 42%;
+        padding-right: 18px;
+      }
+    }
+
+    .banner-art svg {
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+      display: block;
+    }
+
+    /* ==========================================================================
+       4. 通用卡片、按钮与标签组件
+       ========================================================================== */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid #ffffff;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
+      padding: 20px;
+    }
+
+    @media (min-width: 640px) {
+      .card { padding: 28px; }
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-pill);
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); opacity: 0.95; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.18s ease;
+    }
+    .btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #e2e8f0;
+      transition: all 0.18s ease;
+    }
+    .btn-ghost:hover { color: var(--text-main); background: #ffffff; }
+
+    /* ==========================================================================
+       5. 7级李克特量表答题交互样式
+       ========================================================================== */
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .likert-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 8px 4px;
+    }
+
+    @media (min-width: 640px) {
+      .likert-row { gap: 14px; }
+    }
+
+    .likert-dot {
+      border-radius: 50%;
+      border-style: solid;
+      border-width: 2.5px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .likert-dot:hover { transform: scale(1.13); }
+    .likert-dot:active { transform: scale(0.94); }
+
+    .dot-lg { width: 44px; height: 44px; }
+    .dot-md { width: 37px; height: 37px; }
+    .dot-sm { width: 31px; height: 31px; }
+    .dot-xs { width: 26px; height: 26px; }
+
+    @media (min-width: 640px) {
+      .dot-lg { width: 54px; height: 54px; }
+      .dot-md { width: 45px; height: 45px; }
+      .dot-sm { width: 37px; height: 37px; }
+      .dot-xs { width: 30px; height: 30px; }
+    }
+
+    .likert-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 540px;
+      margin: 10px auto 0;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    /* ==========================================================================
+       6. 报告网格与光谱进度条
+       ========================================================================== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    @media (min-width: 768px) {
+      .grid-2 { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 640px) {
+      .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 920px) {
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .grid-4 { grid-template-columns: repeat(4, 1fr); gap: 15px; }
+    }
+
+    .grid-5 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 640px) {
+      .grid-5 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 960px) {
+      .grid-5 { grid-template-columns: repeat(5, 1fr); }
+    }
+
+    .spectrum-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: #eef2f6;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .spectrum-seg-left {
+      height: 100%;
+      border-radius: 999px 0 0 999px;
+      transition: width 0.6s ease;
+    }
+    .spectrum-seg-right {
+      height: 100%;
+      border-radius: 0 999px 999px 0;
+      transition: width 0.6s ease;
+    }
+
+    /* ==========================================================================
+       7. 图鉴筛选器与模态弹窗
+       ========================================================================== */
+    .atlas-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .atlas-tab {
+      padding: 9px 15px;
+      border-radius: var(--radius-pill);
+      font-size: 12.5px;
+      font-weight: 800;
+      background: #ffffff;
+      color: var(--text-sub);
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+
+    .atlas-tab.active {
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+    }
+
+    .filter-bar {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-input, .filter-select {
+      padding: 8px 12px;
+      border-radius: 11px;
+      border: 1px solid #cbd5e1;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #0f172a;
+      background: #f8fafc;
+      outline: none;
+    }
+    .filter-input:focus, .filter-select:focus {
+      border-color: #3498DB;
+      background: #ffffff;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: 26px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.28);
+      animation: fadeSlideUp 0.3s ease forwards;
+    }
+
+    .modal-head {
+      padding: 15px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-body {
+      padding: 18px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-foot {
+      padding: 13px 20px;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #f8fafc;
+    }
+
+    /* Toast 提示 */
+    .toast-wrap {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 70;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast-msg {
+      background: rgba(15, 23, 42, 0.92);
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+      animation: fadeSlideUp 0.25s ease forwards;
+    }
+
+    .site-footer {
+      border-top: 1px solid var(--border-soft);
+      background: rgba(255, 255, 255, 0.65);
+      padding: 20px 16px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 背景氛围光斑 -->
+  <div class="ambient-bg">
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+  </div>
+
+  <!-- 顶部粘性导航栏 -->
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="brand-btn" onclick="switchTab('tests')">
+        <div class="brand-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+            <polygon points="12 2 21 7 21 17 12 22 3 17 3 7 12 2"></polygon>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">64personality · 全维人格测评实验室</div>
+          <div class="brand-sub">MBTI-64 · Animal Archetype · 16 Love Type · 12 Archetype · MBTI Duality</div>
+        </div>
+      </button>
+
+      <nav class="nav-tabs">
+        <button class="nav-tab active" id="tab-tests" onclick="switchTab('tests')">测评大厅 (Tests)</button>
+        <button class="nav-tab" id="tab-atlas" onclick="switchTab('atlas')">全人格图鉴 (Atlas)</button>
+        <button class="nav-tab" id="tab-profile" onclick="switchTab('profile')">
+          <span>综合人格档案 (My Profile & History)</span>
+          <span class="nav-badge" id="history-count" style="display:none;">0</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 主视图动态挂载区 -->
+  <main class="main-wrap" id="app-root"></main>
+
+  <!-- 页脚 -->
+  <footer class="site-footer">
+    64personality · 全维人格测评实验室 · 五大深度心理测评模型融合平台 · 测评结果仅供自我探索与心理成长参考
+  </footer>
+
+  <!-- 通用详情与分享海报模态框 -->
+  <div class="modal-backdrop" id="app-modal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box">
+      <div class="modal-head">
+        <strong id="modal-title" style="font-size:15.5px; color:#0f172a;">详情预览</strong>
+        <button onclick="closeModal()" style="width:32px;height:32px;border-radius:50%;background:#f1f5f9;color:#475569;font-weight:800;">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-foot" id="modal-foot"></div>
+    </div>
+  </div>
+
+  <!-- Toast 轻提示容器 -->
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script>
+    /**
+     * ============================================================================
+     * 一、五大测评系统完整心理学数据库
+     * ============================================================================
+     */
+
+    // ----------------------------------------------------------------------------
+    // 0. 五大测评门户元数据配置
+    // ----------------------------------------------------------------------------
+    const TEST_META = {
+      mbti64: {
+        id: 'mbti64',
+        cnName: '六维64型人格测试',
+        enTitle: 'MBTI-64',
+        enSub: 'Your MBTI is more than 4 letters. Discover all 64 types.',
+        primary: '#3498DB',
+        dark: '#1d6fa5',
+        softBg: '#eaf5fc',
+        border: '#bae6fd',
+        countText: '24题快速版 / 48题专业版',
+        duration: '约 3~6 分钟',
+        introDesc: '超越传统 16 型的粗糙标签！在经典 E/I、S/N、T/F、J/P 四维基础上，引入现代心理学拓展的第五维「果断自信 A / 纠结敏锐 O」与第六维「温暖共情 H / 高冷克制 C」，精准定位 2⁶ = 64 种精细亚型人格编码。'
+      },
+      animal: {
+        id: 'animal',
+        cnName: '动物原型测试',
+        enTitle: 'Animal Archetype',
+        enSub: 'Are you a wolf, fox, or lion? Discover your inner animal.',
+        primary: '#B87333',
+        dark: '#87501d',
+        softBg: '#faf1e6',
+        border: '#f2dec6',
+        countText: '16道本能情景题',
+        duration: '约 2 分钟',
+        introDesc: '每个人灵魂深处都栖息着一位原始动物向导。本测评通过 16 道自然本能与社会应对情景题，从领地领导力、群居共情力、敏捷变通度与沉思洞察力四大维度，揭示你的主导动物原型与潜藏影子动物。'
+      },
+      love: {
+        id: 'love',
+        cnName: '16型恋爱人格',
+        enTitle: '16 Love Type',
+        enSub: 'What kind of lover are you? Discover your unique love style.',
+        primary: '#E06377',
+        dark: '#b83d51',
+        softBg: '#fcebf1',
+        border: '#f7d4e1',
+        countText: '16道亲密互动题',
+        duration: '约 2 分钟',
+        introDesc: '在亲密关系中，你是热烈奔赴的“炽热骑士”，还是外冷内热的“深海烟火”？通过 16 道真实恋爱情景题，解析你在主动出击(A/I)、浪漫理想(R/P)、炽热外放(F/S)与深度共生(D/M)上的专属恋爱编码与命定灵魂伴侣。'
+      },
+      archetype: {
+        id: 'archetype',
+        cnName: '荣格12原型测试',
+        enTitle: '12 Archetype',
+        enSub: 'King, Hero, or Rebel? Discover the archetype that drives you.',
+        primary: '#7B3F9E',
+        dark: '#582875',
+        softBg: '#f3eaf8',
+        border: '#e1d4f7',
+        countText: '24道动机探测题',
+        duration: '约 3 分钟',
+        introDesc: '基于卡尔·荣格集体潜意识理论，人类共有 12 种驱动生命选择的核心原型。通过 24 道深层动机探测题，为你绘制 12 辐极坐标图谱，揭示你的「主导原型」、「辅助翼型」与潜意识「压抑阴影原型」。'
+      },
+      duality: {
+        id: 'duality',
+        cnName: 'MBTI双面人格测试',
+        enTitle: 'MBTI Duality',
+        enSub: "Every personality has two sides. What's your hidden side?",
+        primary: '#2563EB',
+        dark: '#1d4ed8',
+        softBg: '#ebf2fe',
+        border: '#bfdbfe',
+        countText: '20道昼夜双层题',
+        duration: '约 3 分钟',
+        introDesc: '白天在职场与社交场上游刃有余的你，与深夜独处或极度亲密关系中的你，是否判若两人？采用昼夜双层探测模型，同步测定你的「白昼表层人格」与「深夜潜意识人格」，量化你的昼夜反差指数。'
+      }
+    };
+
+    // ----------------------------------------------------------------------------
+    // 1. MBTI-64 六维人格数据库 (4阵营 × 16基础型 × 4亚型 = 64型)
+    // ----------------------------------------------------------------------------
+    const TEMPERAMENTS = {
+      NT: { code: 'NT', name: '分析家阵营', en: 'Analysts', primary: '#7C3AED', secondary: '#4F46E5', softBg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6' },
+      NF: { code: 'NF', name: '外交家阵营', en: 'Diplomats', primary: '#059669', secondary: '#0D9488', softBg: '#ECFDF5', border: '#A7F3D0', text: '#065F46' },
+      SJ: { code: 'SJ', name: '守护者阵营', en: 'Sentinels', primary: '#0284C7', secondary: '#2563EB', softBg: '#F0F9FF', border: '#BAE6FD', text: '#075985' },
+      SP: { code: 'SP', name: '探险家阵营', en: 'Explorers', primary: '#D97706', secondary: '#EA580C', softBg: '#FFFBEB', border: '#FDE68A', text: '#92400E' }
+    };
+
+    const MBTI_16_TYPES = {
+      INTJ: {
+        code: 'INTJ', name: '建筑师', en: 'Architect', temp: 'NT',
+        motto: '在喧嚣表象之下，万物皆有可被重构的底层逻辑。',
+        summary: '拥有极具前瞻性的战略眼光与独立思维能力，习惯于将复杂问题拆解为精密的系统蓝图，追求智识深度与长远最优解。',
+        strengths: ['系统化战略规划与全局推演能力', '极强的独立思考与深度自驱力', '直击本质的洞察力与高执行标准'],
+        blindSpots: ['容易对低效或过度情绪化表达失去耐心', '有时沉浸于脑内推演而忽略现实人际磨合'],
+        careers: ['战略顾问 / 商业分析师', '系统架构师 / AI算法专家', '投资总监 / 量化策略师'],
+        matches: ['ENFP-A-H', 'ENTP-O-H', 'INFJ-A-C']
+      },
+      INTP: {
+        code: 'INTP', name: '逻辑学家', en: 'Logician', temp: 'NT',
+        motto: '真理往往藏在众人习以为常的假设裂缝之中。',
+        summary: '好奇心永不枯竭的思想探索者，热衷于解构概念、发现逻辑悖论，享受纯粹智力碰撞带来的自由与愉悦。',
+        strengths: ['敏锐的逻辑解构与抽象建模思维', '高度客观中立的分析视角', '不受教条束缚的破框创造力'],
+        blindSpots: ['容易陷入“分析瘫痪”而延迟落地执行', '对繁琐日常事务缺乏持久耐心'],
+        careers: ['算法工程师 / 科研学者', '哲学与社会学研究者', '游戏机制与系统设计师'],
+        matches: ['ENTJ-A-H', 'ENFJ-O-H', 'INFJ-A-H']
+      },
+      ENTJ: {
+        code: 'ENTJ', name: '指挥官', en: 'Commander', temp: 'NT',
+        motto: '目标既定，便没有无法跨越的壁垒，只有尚未调动的资源。',
+        summary: '天生的全局统筹者与破局先锋，擅长在混沌中迅速建立秩序，将宏大愿景转化为清晰可执行的里程碑。',
+        strengths: ['卓越的决断力与组织领导气场', '宏观视野与跨界资源整合能力', '越挫越勇的抗压性与结果导向'],
+        blindSpots: ['推进节奏过快可能给身边人带来压迫感', '偶尔低估他人情绪需求的权重'],
+        careers: ['企业创始人 / CEO', '管理咨询合伙人', '风险投资人 / 大型项目总监'],
+        matches: ['INTP-O-H', 'INFP-A-H', 'ENTP-A-C']
+      },
+      ENTP: {
+        code: 'ENTP', name: '辩论家', en: 'Debater', temp: 'NT',
+        motto: '规则存在的意义，就是激发我们去发现更有趣的玩法。',
+        summary: '思维跳跃如闪电的创意催化剂，喜欢从反常规角度审视世界，擅长在思想交锋中点燃灵感火花。',
+        strengths: ['源源不断的跨界创意与破局灵感', '极强的临场应变与逻辑说服力', '快速学习新领域的悟性与幽默感'],
+        blindSpots: ['同时开启过多项目导致收尾困难', '有时为了思辨乐趣而显得好辩'],
+        careers: ['创新产品经理 / 连续创业者', '创意总监 / 品牌策略官', '商业谈判专家 / 科技媒体人'],
+        matches: ['INFJ-A-H', 'INTJ-O-H', 'ISFJ-A-H']
+      },
+      INFJ: {
+        code: 'INFJ', name: '提倡者', en: 'Advocate', temp: 'NF',
+        motto: '安静地倾听灵魂深处的回响，温柔却坚定地照亮前路。',
+        summary: '兼具深邃直觉与人文关怀的理想主义者，能够穿透言辞表象洞察他人的真实情绪与未来走向，渴望活出有深度的生命意义。',
+        strengths: ['极高阶的共情力与人性深层洞察', '对精神价值与理想的坚定守护', '润物细无声的引导与治愈能量'],
+        blindSpots: ['容易过度吸收他人负面情绪导致能量耗竭', '隐秘的完美主义倾向带来自我压力'],
+        careers: ['心理咨询师 / 生涯规划师', '内容主编 / 作家 / 编剧', '用户体验研究(UXR) / 教育者'],
+        matches: ['ENFP-A-H', 'ENTP-A-H', 'INTJ-O-H']
+      },
+      INFP: {
+        code: 'INFP', name: '调停者', en: 'Mediator', temp: 'NF',
+        motto: '内心自有一座繁花盛开的宇宙，忠于真实便是最好的答案。',
+        summary: '拥有丰富精神世界与纯粹价值观的诗意灵魂，对美、真诚与善意有着本能的向往，总能在平凡日常中捕捉微光。',
+        strengths: ['忠于内心的真诚与高级审美天赋', '包容接纳差异的温柔气度', '极具感染力的创意与叙事表达'],
+        blindSpots: ['面对冰冷功利的现实规则容易感到疲惫', '容易将外界批评内化为自我怀疑'],
+        careers: ['插画师 / 独立音乐人 / 设计师', '文学创作 / 艺术策展人', '心理疗愈师 / 品牌故事官'],
+        matches: ['ENFJ-A-H', 'ENTJ-O-H', 'INFJ-A-H']
+      },
+      ENFJ: {
+        code: 'ENFJ', name: '主人公', en: 'Protagonist', temp: 'NF',
+        motto: '每个人身上都藏着未被点亮的星光，而我愿做那个点灯人。',
+        summary: '充满感召力与利他精神的灵魂凝聚者，敏锐捕捉群体情绪氛围，擅长激发他人潜能并推动共同成长。',
+        strengths: ['极强的团队凝聚力与沟通魅力', '真诚温暖的共情与鼓励能力', '清晰的愿景传达与组织协调手腕'],
+        blindSpots: ['过度关注他人需求而忽略自我边界', '面对人际冲突时容易过度自责'],
+        careers: ['组织发展(OD) / HRBP总监', '教育培训导师 / 演讲家', '公关传播总监 / 社群主理人'],
+        matches: ['INFP-O-H', 'ISFP-A-H', 'INTP-A-H']
+      },
+      ENFP: {
+        code: 'ENFP', name: '竞选者', en: 'Campaigner', temp: 'NF',
+        motto: '生活不是单行道，而是一场充满奇遇的旷野漫游！',
+        summary: '热情洋溢、灵魂自由的灵感探索者，总能在人与事之间发现奇妙连结，用真诚与生命力感染身边的每一个人。',
+        strengths: ['极具感染力的热情与生命活力', '天马行空的联想与破框思维', '极强的社交破冰与共情能力'],
+        blindSpots: ['注意力容易被新奇事物分散', '在情绪低谷期需要独自消化反差感'],
+        careers: ['创意策划 / 广告导演', '自媒体创作者 / 主持人', '跨文化交流 / 体验设计师'],
+        matches: ['INTJ-A-H', 'INFJ-O-H', 'ENTJ-A-H']
+      },
+      ISTJ: {
+        code: 'ISTJ', name: '物流师', en: 'Logistician', temp: 'SJ',
+        motto: '真正的可靠，是把每一件承诺过的小事都做到极致。',
+        summary: '严谨务实、信守承诺的秩序基石，凭借缜密的记忆力与一丝不苟的执行标准，在任何团队中都是最值得托付的中流砥柱。',
+        strengths: ['无与伦比的责任感与契约精神', '高度专注的细节把控与执行力', '尊重事实与客观规律的稳健判断'],
+        blindSpots: ['对缺乏依据的突发变动容易产生抵触', '情感表达朴素内敛易被误解为刻板'],
+        careers: ['审计师 / 财务总监 / 精算师', '法务合规专家 / 供应链管理', '系统运维 / 数据治理专家'],
+        matches: ['ESFP-A-H', 'ESTP-O-H', 'ISFJ-A-C']
+      },
+      ISFJ: {
+        code: 'ISFJ', name: '守卫者', en: 'Defender', temp: 'SJ',
+        motto: '最深沉的爱意，往往藏在不动声色的周全照料里。',
+        summary: '细腻体贴、默默耕耘的温暖守护者，总能记住身边人的喜好与细节，用踏实而持久的行动编织安全感。',
+        strengths: ['春风化雨般的细腻观察与体贴', '极强的耐心、恒心与服务意识', '务实可靠的执行与善后能力'],
+        blindSpots: ['习惯默默承受委屈而不主动表达诉求', '很难对亲近之人的请求说“不”'],
+        careers: ['医疗健康 / 临床护理专家', '客户成功总监 / 行政管理', '教育工作者 / 客户体验管家'],
+        matches: ['ESFP-A-H', 'ESTP-A-H', 'ENFP-O-H']
+      },
+      ESTJ: {
+        code: 'ESTJ', name: '总经理', en: 'Executive', temp: 'SJ',
+        motto: '清晰的规则与高效的执行，是成就一切事业的基石。',
+        summary: '果敢干练、注重实效的秩序管理者，擅长建立明确的标准与分工体系，带领团队稳步达成可量化的现实成果。',
+        strengths: ['出色的落地执行与流程管控力', '坦率直接、不拖泥带水的沟通风格', '强烈的担当精神与组织忠诚度'],
+        blindSpots: ['有时过于坚持既有标准而显得不够灵活', '追求效率时可能忽略成员的微妙情绪'],
+        careers: ['运营总监(COO) / 事业部总经理', '银行风控 / 金融管理', '供应链与生产总监 / 法律实务'],
+        matches: ['ISFP-O-H', 'ISTP-A-H', 'INFJ-A-C']
+      },
+      ESFJ: {
+        code: 'ESFJ', name: '执政官', en: 'Consul', temp: 'SJ',
+        motto: '让人与人之间产生温暖而有序的连结，是最美好的事。',
+        summary: '热忱周到、深谙人情世故的社交凝聚者，擅长营造和谐融洽的集体氛围，用实际行动关怀身边的每一位伙伴。',
+        strengths: ['卓越的人际协调与氛围营造能力', '周全细致的组织与落地执行力', '真诚热情的利他与支持精神'],
+        blindSpots: ['过度在意他人评价与群体和谐', '面对正面冲突或尖锐批评容易受伤'],
+        careers: ['公关活动策划 / 品牌市场总监', '人力资源(HR) / 员工关系专家', '医疗健康管理 / 社群运营负责人'],
+        matches: ['ISFP-A-H', 'ISTP-O-H', 'INFP-A-H']
+      },
+      ISTP: {
+        code: 'ISTP', name: '鉴赏家', en: 'Virtuoso', temp: 'SP',
+        motto: '少说多做，在亲手拆解与重塑中掌握事物的运行法则。',
+        summary: '冷静敏锐、动手能力极强的实战派问题解决者，在突发状况下总能保持惊人的松弛感与精准度，用最省力的方式击中要害。',
+        strengths: ['极强的动手实操与工具驾驭能力', '突发危机下超乎常人的冷静', '简洁高效、直奔主题的务实风格'],
+        blindSpots: ['对长远空泛的规划缺乏耐心', '独立空间需求极高，不喜欢被过度干涉'],
+        careers: ['硬件/机械工程师 / 飞行员', '外科医生 / 急救专家', '网络安全专家 / 架构调试师'],
+        matches: ['ESFJ-A-H', 'ESTJ-O-H', 'ENFJ-A-C']
+      },
+      ISFP: {
+        code: 'ISFP', name: '探险家', en: 'Adventurer', temp: 'SP',
+        motto: '用五官去触摸世界的质感，把每一天都活成流动的艺术。',
+        summary: '审美敏锐、温柔随性的生活艺术家，忠于当下的真实感受，用色彩、声音、肢体与温暖陪伴表达对世界的热爱。',
+        strengths: ['与生俱来的高级审美与艺术感知力', '随和包容、不评判他人的温柔气场', '极强的当下体验感与灵活适应力'],
+        blindSpots: ['面对长期枯燥规划容易产生逃避心理', '内心敏感却习惯独自消化情绪'],
+        careers: ['UI/UX设计师 / 时尚造型师', '摄影师 / 花艺师 / 咖啡主理人', '自然疗愈师 / 新媒体视觉创作'],
+        matches: ['ENFJ-A-H', 'ESFJ-O-H', 'ESTJ-A-H']
+      },
+      ESTP: {
+        code: 'ESTP', name: '企业家', en: 'Entrepreneur', temp: 'SP',
+        motto: '机会永远属于敢于第一个跃入浪潮、并在浪尖起舞的人。',
+        summary: '精力充沛、胆识过人的实战行动派，对市场机会与人际动态有着野兽般的直觉，擅长在快速变化中拿下漂亮战果。',
+        strengths: ['极快的临场反应与果断行动力', '敏锐的商业嗅觉与机会捕捉能力', '极具魅力的社交感染力与幽默感'],
+        blindSpots: ['有时过于追求即时反馈而忽略长远风险', '对冗长的理论探讨容易不耐烦'],
+        careers: ['商务拓展(BD) / 大客户销售总监', '创业者 / 餐饮娱乐品牌主理人', '体育竞技 / 危机公关 / 交易员'],
+        matches: ['ISFJ-A-H', 'ISTJ-O-H', 'INFJ-A-H']
+      },
+      ESFP: {
+        code: 'ESFP', name: '表演者', en: 'Entertainer', temp: 'SP',
+        motto: '人生就是一场盛大的现场演出，尽情发光就是最好的剧本！',
+        summary: '乐观耀眼、自带聚光灯的快乐制造机，拥有极强的审美表现力与人情温度，总能把平淡日常变成充满欢笑的派对。',
+        strengths: ['极强的现场感染力与乐观能量', '敏锐的时尚审美与人际亲和力', '活在当下、快速走出阴霾的韧性'],
+        blindSpots: ['面对严苛枯燥的长期规划容易分心', '有时为了维持热闹氛围而回避深层矛盾'],
+        careers: ['演员 / 主播 / 短视频创作者', '活动策划 / 品牌体验官', '旅游博主 / 时尚买手 / 艺术教育'],
+        matches: ['ISFJ-A-H', 'ISTJ-A-H', 'INTJ-O-H']
+      }
+    };
+
+    const MBTI_SUBTYPES = {
+      'A-H': {
+        code: 'A-H', ao: 'A', hc: 'H', label: '果断温暖型', tag: '笃定小太阳 · 高能量治愈者',
+        aoName: '果断自信 (A)', hcName: '温暖共情 (H)',
+        aoAnalysis: '面对选择与挑战时展现出极佳的心理韧性与行动力。一旦看清方向便迅速推进，极少陷入无意义的自我怀疑或事后反刍。',
+        aoTip: '果断能带来极高效率，但在重大转折前不妨留出 10% 的“慢思考缓冲期”，倾听不同视角的声音。',
+        hcAnalysis: '拥有天然的亲和力与细腻共情力，待人真诚热忱，习惯主动释放善意并照顾他人感受，极易建立深度信任。',
+        hcTip: '温暖是你的天赋，但请记得把同样份量的温柔留给自己，学会在能量超载时设立温和而坚定的边界。'
+      },
+      'A-C': {
+        code: 'A-C', ao: 'A', hc: 'C', label: '果断高冷型', tag: '冷静破局者 · 理性独行侠',
+        aoName: '果断自信 (A)', hcName: '高冷克制 (C)',
+        aoAnalysis: '具备强烈的内在掌控感与目标执行力，做决定干脆利落，抗压能力出众，外界杂音很难动摇你的核心判断。',
+        aoTip: '强大的自驱力让你无往不利，偶尔放慢脚步复盘细节，能让你的长线布局更加滴水不漏。',
+        hcAnalysis: '在人际交往中保持清醒克制的分寸感，不喜无意义的寒暄，重视独立空间与精神契合，对认可的少数人极度讲义气。',
+        hcTip: '适时用简短直接的语言表达赞赏与在意，能让真正懂你的人更快穿过你的礼貌边界。'
+      },
+      'O-H': {
+        code: 'O-H', ao: 'O', hc: 'H', label: '纠结温暖型', tag: '细腻共情家 · 温柔深思者',
+        aoName: '纠结敏锐 (O)', hcName: '温暖共情 (H)',
+        aoAnalysis: '拥有极度细腻的风险嗅觉与自我反思习惯，做决定前会反复权衡利弊；虽偶有内耗，但也正因审慎而极少犯下草率错误。',
+        aoTip: '为日常小事设定“3分钟决策法则”，把深度思虑留给真正影响未来的关键命题，允许先完成再完美。',
+        hcAnalysis: '内心柔软富有温度，对他人的情绪波动极为敏感，习惯体谅他人、避免冷场，是朋友圈最可靠的倾听者与避风港。',
+        hcTip: '不要把别人的情绪课题全部背在自己肩上，区分“我可以帮忙”与“这是对方的功课”。'
+      },
+      'O-C': {
+        code: 'O-C', ao: 'O', hc: 'C', label: '纠结高冷型', tag: '敏锐观察者 · 清冷思考者',
+        aoName: '纠结敏锐 (O)', hcName: '高冷克制 (C)',
+        aoAnalysis: '大脑仿佛一台精密推演仪，对细节、逻辑漏洞与潜在风险有着极高敏感度，独处时会进行大量深度复盘与自我审视。',
+        aoTip: '当脑海中的推演循环打转时，用具体的微行动打破思虑闭环，你会发现现实远比想象更容易掌控。',
+        hcAnalysis: '习惯将丰富细腻的内心波澜隐藏在平静克制的外表之下，注重隐私与独立精神空间，不轻易交付真心但一旦认定便深沉持久。',
+        hcTip: '允许自己在绝对安全的关系中偶尔展现脆弱与真实想法，那不是失控，而是深度连结的开始。'
+      }
+    };
+
+    const MBTI64_QUESTIONS = [
+      // EI (8)
+      { id: 1, dim: 'EI', dir: 1, text: '在热闹的多人聚会或行业沙龙中，与陌生人开启对话往往会让你感到精神焕发、越聊越兴奋。' },
+      { id: 2, dim: 'EI', dir: -1, text: '连续参加一整天的社交活动后，即使过程很愉快，你也需要一段完全不被打扰的独处时间来“回血”。' },
+      { id: 3, dim: 'EI', dir: 1, text: '当脑海中出现一个新想法时，你更倾向于立刻找人聊一聊，在表达与碰撞中理清思路。' },
+      { id: 4, dim: 'EI', dir: -1, text: '在群聊或会议讨论中，你通常习惯先默默观察与整理好完整想法，必要时才精准发言。' },
+      { id: 5, dim: 'EI', dir: 1, text: '周末如果连续两天都独自待在家里不与人见面，你会明显感到有些无聊或能量低落。' },
+      { id: 6, dim: 'EI', dir: -1, text: '相比于认识几十位泛泛之交，你把绝大多数社交精力都留给两三位能深度交心的挚友。' },
+      { id: 7, dim: 'EI', dir: 1, text: '在新的团队或社群里，你往往是那个主动打破沉默、活跃气氛的破冰者。' },
+      { id: 8, dim: 'EI', dir: -1, text: '在嘈杂开放的办公环境中工作，会让你比在安静独立的空间里更快感到精力消耗。' },
+      // SN (8)
+      { id: 9, dim: 'SN', dir: 1, text: '学习一项新技能时，你更喜欢一步步清晰具体的操作步骤，而不是先听抽象的宏观理论。' },
+      { id: 10, dim: 'SN', dir: -1, text: '你经常会跳出当前眼前的具体事务，去思考未来三到五年的趋势演变或事物背后的隐喻联系。' },
+      { id: 11, dim: 'SN', dir: 1, text: '在回忆一段旅行或经历时，你对当时的食物味道、街景细节和具体对话记得格外清晰。' },
+      { id: 12, dim: 'SN', dir: -1, text: '听别人讲述一件事时，你的大脑会自动联想它背后的深层动机与多种可能性，有时甚至走神到脑洞里。' },
+      { id: 13, dim: 'SN', dir: 1, text: '做判断时，你更信任经过实践验证的成熟经验与客观数据，对天马行空的设想持审慎态度。' },
+      { id: 14, dim: 'SN', dir: -1, text: '相比于按部就班地优化现有方案，从零到一构思一个颠覆性的新概念更能点燃你的激情。' },
+      { id: 15, dim: 'SN', dir: 1, text: '你更欣赏言简意赅、直指事实的表达方式，而不是充满象征与留白的文艺修辞。' },
+      { id: 16, dim: 'SN', dir: -1, text: '你常常在毫无征兆的时刻（如洗澡或散步时），突然获得某种“顿悟式”的整体灵感。' },
+      // TF (8)
+      { id: 17, dim: 'TF', dir: 1, text: '在团队发生分歧时，你认为首要任务是找出逻辑上最合理、效率最高的方案，哪怕过程会有些尖锐。' },
+      { id: 18, dim: 'TF', dir: -1, text: '做重要决定时，这件事对相关人员的情感感受与人际和谐的影响，往往是你无法忽视的核心考量。' },
+      { id: 19, dim: 'TF', dir: 1, text: '当朋友向你倾诉烦恼时，你的第一反应通常是帮他冷静分析问题根源并列出可行的解决办法。' },
+      { id: 20, dim: 'TF', dir: -1, text: '看到电影里的感人情节或听到他人的坎坷经历时，你很容易产生强烈的情感共鸣甚至眼眶湿润。' },
+      { id: 21, dim: 'TF', dir: 1, text: '你宁愿别人坦率直接地指出你工作中的客观漏洞，也不希望对方为了照顾面子而委婉含糊。' },
+      { id: 22, dim: 'TF', dir: -1, text: '在评价一个人的行为时，你会非常看重他出发点里的善意与处境苦衷，而不仅仅是冰冷的结果。' },
+      { id: 23, dim: 'TF', dir: 1, text: '面对冲突与争议，你能够迅速抽离个人情绪，像旁观者一样客观评估双方的得失筹码。' },
+      { id: 24, dim: 'TF', dir: -1, text: '如果一个决定在商业或逻辑上完全正确，但会伤害到信任你的人，你会感到极其煎熬并试图寻找折中。' },
+      // JP (8)
+      { id: 25, dim: 'JP', dir: 1, text: '出行旅游前，你习惯提前规划好每日路线、交通接驳与备选方案，一切尽在掌握会让你非常安心。' },
+      { id: 26, dim: 'JP', dir: -1, text: '你更享受不设死板日程的自由状态，根据当天的心情和突发奇想来决定去哪里、做什么。' },
+      { id: 27, dim: 'JP', dir: 1, text: '面对截止日期（Deadline），你倾向于尽早拆解任务并提前完成，讨厌最后时刻手忙脚乱的压迫感。' },
+      { id: 28, dim: 'JP', dir: -1, text: '临近截止日期时的紧迫感，反而常常能激发你最高的专注度与创造力。' },
+      { id: 29, dim: 'JP', dir: 1, text: '你的桌面、手机相册或工作文件夹通常有着清晰的分类逻辑，物品归位能带来愉悦感。' },
+      { id: 30, dim: 'JP', dir: -1, text: '你喜欢把选择权保留到最后一刻，过早把事情敲定死板反而会让你觉得束缚了更好的可能性。' },
+      { id: 31, dim: 'JP', dir: 1, text: '当原定计划被临时打乱时，你的第一反应往往是感到些许烦躁，并迅速着手重建新秩序。' },
+      { id: 32, dim: 'JP', dir: -1, text: '你经常同时推进好几件感兴趣的事情，在它们之间随性切换，而不是非要干完一件再开下一件。' },
+      // AO (8)
+      { id: 33, dim: 'AO', dir: 1, text: '一旦做出决定并付诸行动，你就很少回头去想“当初如果选另一条路会不会更好”。' },
+      { id: 34, dim: 'AO', dir: -1, text: '哪怕只是网购一件普通商品或点一份外卖，你也常常在几个选项之间反复对比权衡很久。' },
+      { id: 35, dim: 'AO', dir: 1, text: '面对突发失误或他人质疑，你能迅速稳住心态并聚焦于补救措施，极少陷入长时间的情绪内耗。' },
+      { id: 36, dim: 'AO', dir: -1, text: '在夜晚安静下来时，你脑海里经常会不自觉地“回放”白天说过的话或做过的事，思考哪里不够妥当。' },
+      { id: 37, dim: 'AO', dir: 1, text: '你信奉“先开枪再瞄准”，在信息只有七成把握时就敢果断出手，在实践中动态修正。' },
+      { id: 38, dim: 'AO', dir: -1, text: '在重要行动开始前，你习惯把所有可能出错的坏情况都在脑海里预演一遍，因此有时会迟迟难以下手。' },
+      { id: 39, dim: 'AO', dir: 1, text: '你对自己的核心能力有着稳定的笃定感，很少因为一时的挫折而全盘否定自己的价值。' },
+      { id: 40, dim: 'AO', dir: -1, text: '面对多种人生或职业选择时，你常常因为害怕错过某一种可能性而感到隐隐的焦虑与拉扯。' },
+      // HC (8)
+      { id: 41, dim: 'HC', dir: 1, text: '在日常沟通中，你习惯自然地释放亲和力与善意（如微笑、暖心回应），让对方感到被接纳和重视。' },
+      { id: 42, dim: 'HC', dir: -1, text: '在不熟悉的人面前，你通常会保持礼貌而克制的距离感，不会轻易流露热情或分享私人生活。' },
+      { id: 43, dim: 'HC', dir: 1, text: '你很自然地会去记住朋友的小习惯、纪念日或随口提过的心愿，并在不经意间给予温暖关怀。' },
+      { id: 44, dim: 'HC', dir: -1, text: '你非常看重清晰的个人边界，无论是物理空间还是心理领域，都不喜欢别人未经允许过度介入。' },
+      { id: 45, dim: 'HC', dir: 1, text: '即使对普通同事或服务人员，你也会习惯性地用温和、体谅的语气交流，很少让人感到冷漠。' },
+      { id: 46, dim: 'HC', dir: -1, text: '在社交场合中，如果你对某个话题或人群不感兴趣，你不会勉强自己假装热情迎合。' },
+      { id: 47, dim: 'HC', dir: 1, text: '身边的人常评价你“很好相处”、“很有温度”，遇到烦心事时往往第一时间想找你倾诉。' },
+      { id: 48, dim: 'HC', dir: -1, text: '初识你的人有时会觉得你“气场有点冷”或“不太容易接近”，只有真正走进你内心的人才知道你的深情。' }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 2. Animal Archetype 动物原型数据库 (8种动物)
+    // ----------------------------------------------------------------------------
+    const ANIMAL_DIMENSIONS = [
+      { key: 'DOM', left: '领地领导力', right: '随和协作', en: 'Dominance' },
+      { key: 'SOC', left: '群居共情力', right: '独立独行', en: 'Social' },
+      { key: 'AGI', left: '敏捷变通度', right: '沉稳恒定', en: 'Agility' },
+      { key: 'WIS', left: '沉思洞察力', right: '直觉行动', en: 'Wisdom' }
+    ];
+
+    const ANIMAL_ARCHETYPES = {
+      LION: {
+        code: 'LION', name: '雄狮', en: 'Lion', title: '荣耀统帅',
+        vector: [88, 78, 55, 58], color: '#B87333', bg: '#fef3c7',
+        motto: '真正的王者不靠咆哮威慑，而以担当与格局凝聚群山。',
+        summary: '拥有与生俱来的核心气场与使命感，在团队中习惯主动扛起大局，既能果断定调方向，又懂得用慷慨与荣耀感激励身边伙伴共同前行。',
+        strengths: ['极具感召力的自然领导气场', '关键时刻敢于拍板担责的魄力', '保护团队与捍卫信念的忠诚度'],
+        workplace: '适合担任团队负责人、项目发起人或核心决策者；在拥有明确授权与舞台的环境中能爆发出惊人能量。',
+        blindSpot: '有时因责任心过强而事必躬亲，或无意中对节奏较慢的伙伴产生压迫感。',
+        ally: 'DEER', allyReason: '梅花鹿的细腻共情能柔化你的锋芒，帮你察觉团队情绪盲区。',
+        tension: 'WOLF', tensionReason: '孤狼对绝对自主权的执着，常与你的中心化统筹产生主权碰撞。'
+      },
+      WOLF: {
+        code: 'WOLF', name: '孤狼', en: 'Wolf', title: '战略独行者',
+        vector: [82, 26, 62, 82], color: '#475569', bg: '#f1f5f9',
+        motto: '荒原之上，清醒的边界与精准的出击才是生存法则。',
+        summary: '外冷内热、意志如钢，不喜无意义的社交喧嚣，习惯在独立观察中制定周密策略。一旦锁定目标，便会以极高的专注度与耐力一击即中。',
+        strengths: ['极强的独立思考与抗压韧性', '敏锐的危机嗅觉与长线策略眼光', '清晰的个人边界与原则底线'],
+        workplace: '擅长独立攻坚、核心技术研发、战略分析与危机处理，在高度自治的环境中表现最佳。',
+        blindSpot: '习惯独自扛下所有压力，不轻易示弱求助，容易让亲近之人感到疏离。',
+        ally: 'EAGLE', allyReason: '猎鹰的高空视野与你的地面执行形成无懈可击的战略双核。',
+        tension: 'DOLPHIN', tensionReason: '海豚高频的社交热情与随性节奏，容易消耗你珍视的独处能量。'
+      },
+      FOX: {
+        code: 'FOX', name: '赤狐', en: 'Fox', title: '灵动智谋家',
+        vector: [58, 42, 92, 84], color: '#d97706', bg: '#ffedd5',
+        motto: '当众人都在硬撞高墙时，我早已找到了绕过迷宫的密道。',
+        summary: '思维敏捷、机智幽默，对局势变化与人心微妙动态有着极高敏锐度。从不拘泥于死板教条，总能用极具创意与巧劲的方式化解难题。',
+        strengths: ['极快的临场应变与破框创造力', '举重若轻的幽默感与沟通技巧', '擅长捕捉信息差与潜在机遇'],
+        workplace: '适合创意策划、商业谈判、产品创新与跨界资源整合，越是充满变数的赛道越能激发潜能。',
+        blindSpot: '有时因点子太多而分散专注力，或在面对枯燥重复的常规流程时容易产生厌倦。',
+        ally: 'BEAR', allyReason: '棕熊的沉稳厚重能为你天马行空的奇思妙想提供最坚实的落地底座。',
+        tension: 'OWL', tensionReason: '猫头鹰对绝对严谨考据的执着，偶尔会觉得你的捷径思维过于跳脱。'
+      },
+      OWL: {
+        code: 'OWL', name: '猫头鹰', en: 'Owl', title: '深邃洞察者',
+        vector: [32, 22, 28, 94], color: '#6d28d9', bg: '#ede9fe',
+        motto: '夜色越深，真相的轮廓在静默的凝视中越发清晰。',
+        summary: '天生的深度思考者与真理探寻者，偏好在安静独立的空间里拆解复杂系统的底层逻辑，不被外界浮躁情绪左右，总能一语道破事物本质。',
+        strengths: ['穿透表象的深度逻辑洞察力', '极高的专注力与知识沉淀能力', '客观中立、不被情绪裹挟的判断'],
+        workplace: '适合架构设计、学术研究、战略咨询、数据分析与深度内容创作，需要充足的独立思考空间。',
+        blindSpot: '容易陷入过度分析而延迟行动时机，或因不善寒暄而被初识者误解为高冷疏离。',
+        ally: 'LION', allyReason: '雄狮强大的落地推动力，能将你深邃的战略洞察转化为现实成果。',
+        tension: 'FOX', tensionReason: '赤狐随性跳跃的破局节奏，有时会打乱你精心构建的逻辑推演体系。'
+      },
+      DEER: {
+        code: 'DEER', name: '梅花鹿', en: 'Deer', title: '温柔治愈者',
+        vector: [24, 86, 76, 52], color: '#059669', bg: '#d1fae5',
+        motto: '真正的力量并非坚硬如铁，而是如林间清泉般润物无声。',
+        summary: '拥有细腻通透的共情能力与温和灵动的气质，能够敏锐察觉他人未说出口的情绪需求，用真诚的倾听与善意为身边人营造极具安全感的避风港。',
+        strengths: ['春风化雨般的共情力与亲和力', '敏锐的审美直觉与人文关怀', '化解人际摩擦的柔韧协调力'],
+        workplace: '适合心理咨询、用户体验研究、人力资源、教育培训与品牌文化建设等以人为核心的领域。',
+        blindSpot: '习惯优先照顾他人感受而委屈自己，面对尖锐冲突时容易产生内耗或回避倾向。',
+        ally: 'BEAR', allyReason: '棕熊坚实可靠的守护力，能为你提供毫无后顾之忧的安全港湾。',
+        tension: 'EAGLE', tensionReason: '猎鹰极致理性、直奔结果的冷峻风格，偶尔会让你感到情感温度不足。'
+      },
+      EAGLE: {
+        code: 'EAGLE', name: '猎鹰', en: 'Eagle', title: '高空远见者',
+        vector: [85, 24, 88, 78], color: '#0284c7', bg: '#e0f2fe',
+        motto: '唯有飞跃云层之上，才能看清整片山脉的走向。',
+        summary: '拥有宏大的战略视野与雷厉风行的决断速度，擅长从高维度俯瞰全局趋势，一旦发现关键机会便毫不犹豫俯冲锁定，追求卓越与自我突破。',
+        strengths: ['前瞻性的全局视野与趋势判断', '毫不拖泥带水的果断行动力', '极强的自我驱动与破局胆识'],
+        workplace: '适合商业拓展、创业领航、投资决策与创新业务开拓，在需要快速开疆拓土的舞台上如鱼得水。',
+        blindSpot: '推进速度过快时容易忽略地面执行细节，或对跟不上节奏的合作者缺乏耐心。',
+        ally: 'WOLF', allyReason: '孤狼缜密的地面战术执行，能完美承接你在高空锁定的战略目标。',
+        tension: 'DEER', tensionReason: '梅花鹿细腻慢热的关怀方式，与你疾风骤雨般的效率节奏存在天然差异。'
+      },
+      BEAR: {
+        code: 'BEAR', name: '棕熊', en: 'Bear', title: '厚重守护者',
+        vector: [78, 62, 22, 74], color: '#78350f', bg: '#fef3c7',
+        motto: '任凭四季风雪更迭，我自如山岳般屹立不摇。',
+        summary: '团队与亲友心中最值得托付的定海神针，做事稳扎稳打、信守承诺，平时温和包容，但在原则与所爱之人受到威胁时会展现出惊人的守护力量。',
+        strengths: ['无与伦比的可靠性与契约精神', '面对高压动荡时的沉稳定力', '务实严谨、善始善终的执行力'],
+        workplace: '适合运营管理、财务风控、工程交付、供应链统筹等需要极高稳定性与责任感的基石岗位。',
+        blindSpot: '对缺乏依据的突发变动适应较慢，有时过于坚持既定经验而显得不够灵活。',
+        ally: 'FOX', allyReason: '赤狐的灵动创意能帮你打破常规瓶颈，而你则为她保驾护航。',
+        tension: 'DOLPHIN', tensionReason: '海豚频繁变化的即兴想法，偶尔会让你精心排布的稳健计划感到失控。'
+      },
+      DOLPHIN: {
+        code: 'DOLPHIN', name: '海豚', en: 'Dolphin', title: '灵感联结者',
+        vector: [48, 92, 88, 36], color: '#0d9488', bg: '#ccfbf1',
+        motto: '快乐与灵感就像海浪，唯有在彼此共振中才会奔涌不息。',
+        summary: '热情洋溢、好奇心旺盛，是人群中天然的能量催化剂。擅长用真诚的赞美、鲜活的创意与幽默感打破隔阂，让枯燥的日常瞬间充满生机。',
+        strengths: ['极具感染力的乐观能量与社交魅力', '源源不断的跨界灵感与表达天赋', '迅速融化冰冷氛围的破冰能力'],
+        workplace: '适合市场公关、内容传播、社群运营、活动策划与创意设计，在高频互动与自由表达中发光发热。',
+        blindSpot: '容易受当下情绪与外部新鲜事物吸引，在枯燥的收尾阶段需要外力督促。',
+        ally: 'LION', allyReason: '雄狮清晰的全局目标感，能把你的无限活力凝聚成耀眼的团队战果。',
+        tension: 'WOLF', tensionReason: '孤狼对静默独处的强烈需求，有时会让你误以为自己遭到了冷落。'
+      }
+    };
+
+    const ANIMAL_QUESTIONS = [
+      { id: 1, dim: 'DOM', dir: 1, text: '当团队陷入群龙无首的僵局时，你通常会自然地站出来统筹分工、拍板定调。' },
+      { id: 2, dim: 'DOM', dir: -1, text: '在集体决策中，相比于自己主导方向，你更乐意配合他人安排、做好分内协助。' },
+      { id: 3, dim: 'DOM', dir: 1, text: '面对不合理的规则或侵犯底线的挑衅，你会毫不退缩地正面捍卫自己的领地与立场。' },
+      { id: 4, dim: 'DOM', dir: -1, text: '只要整体氛围和谐，你通常愿意在方案细节上做出妥协，不执着于掌握控制权。' },
+      { id: 5, dim: 'SOC', dir: 1, text: '与志同道合的伙伴并肩作战、彼此呼应，能让你爆发出远超独自一人时的能量。' },
+      { id: 6, dim: 'SOC', dir: -1, text: '在热闹的人群中待久了，你迫切需要退回到只属于自己的安静角落重新充电。' },
+      { id: 7, dim: 'SOC', dir: 1, text: '你很容易敏锐捕捉到身边人细微的情绪变化，并本能地想要给予温暖回应。' },
+      { id: 8, dim: 'SOC', dir: -1, text: '你更习惯依靠自己的判断独立解决难题，不喜欢把个人困扰轻易向他人倾诉。' },
+      { id: 9, dim: 'AGI', dir: 1, text: '当原定计划被突发状况彻底打乱时，你反而会感到兴奋，并迅速找到新路径绕过障碍。' },
+      { id: 10, dim: 'AGI', dir: -1, text: '相比于频繁尝试未知的新玩法，你更信赖经过时间检验的稳健节奏与成熟路径。' },
+      { id: 11, dim: 'AGI', dir: 1, text: '在复杂的谈判或沟通场合，你总能根据对方的反应瞬间调整话术与策略。' },
+      { id: 12, dim: 'AGI', dir: -1, text: '一旦认准了一件事，你会像磐石一样一步一个脚印坚持到底，极少中途变换赛道。' },
+      { id: 13, dim: 'WIS', dir: 1, text: '在采取实质行动之前，你习惯先退后一步静静观察全局规律与潜在因果链条。' },
+      { id: 14, dim: 'WIS', dir: -1, text: '你更相信“边做边看”的直觉冲劲，认为过度推演反而会错过眼前的最佳时机。' },
+      { id: 15, dim: 'WIS', dir: 1, text: '你对事物背后的深层原理、人性动机与长远趋势有着近乎本能的探究欲。' },
+      { id: 16, dim: 'WIS', dir: -1, text: '你更享受当下感官带来的鲜活体验与即时反馈，很少花时间琢磨抽象的哲学命题。' }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 3. 16 Love Type 16型恋爱人格数据库
+    // ----------------------------------------------------------------------------
+    const LOVE_DIMENSIONS = [
+      { key: 'AI', left: 'A 主动出击', right: 'I 慢热观察', lCode: 'A', rCode: 'I' },
+      { key: 'RP', left: 'R 浪漫理想', right: 'P 务实稳定', lCode: 'R', rCode: 'P' },
+      { key: 'FS', left: 'F 炽热外放', right: 'S 深沉内敛', lCode: 'F', rCode: 'S' },
+      { key: 'DM', left: 'D 深度共生', right: 'M 独立边界', lCode: 'D', rCode: 'M' }
+    ];
+
+    const LOVE_TYPES = {
+      ARFD: { code: 'ARFD', name: '炽热骑士', en: 'Ardent Knight', motto: '爱是明目张胆的偏爱，也是赴汤蹈火的双向奔赴。', language: '高频陪伴 · 热烈告白 · 仪式感惊喜', summary: '一旦心动便毫不掩饰，用最直球、最炽热的浪漫包围伴侣，渴望在亲密关系中毫无保留地交融彼此的生命。', strengths: ['给予伴侣极强的被爱感与情绪价值', '行动力极强的浪漫制造机', '忠诚勇敢、在关系中全情投入'], blindSpots: ['容易因投入过深而产生高期待与敏感失落', '有时忽略伴侣也需要喘息与独处空间'], match: 'IRSD', matchDesc: '灵魂共鸣者的深情与精神理解，能稳稳接住你全部的炽热与浪漫。', advice: '把 10% 的热情留给自己，允许爱人在安静时刻用自己的节奏回应你。' },
+      ARFM: { code: 'ARFM', name: '自由极光', en: 'Free Aurora', motto: '我们并肩追逐同一片星空，却各自拥有绚烂的轨道。', language: '共同探险 · 真诚赞美 · 精神同频', summary: '热情主动又崇尚灵魂自由的浪漫主义者，喜欢带着恋人体验世间美好，同时坚定守护彼此独立成长的呼吸感。', strengths: ['让恋爱永远保持新鲜感与生命力', '既能热烈表达爱意又不黏人捆绑', '乐观豁达、善于化解冷战僵局'], blindSpots: ['面对柴米油盐的琐碎责任时容易分心', '对过度依赖或控制欲强的伴侣会本能退缩'], match: 'IRSM', matchDesc: '雾林吟游者既懂你的诗意浪漫，又天然尊重你珍视的独立边界。', advice: '在浪漫冒险之余，建立几项稳定的日常小约定，会让关系更有安全感。' },
+      ARSD: { code: 'ARSD', name: '星河诗人', en: 'Starlight Poet', motto: '我主动向你走来，把所有温柔都写进日复一日的细节里。', language: '走心长信 · 细腻倾听 · 专属记忆收藏', summary: '既有主动靠近的勇气，又拥有润物细无声的深情。擅长捕捉伴侣最细微的情绪波动，渴望建立灵魂深处高度契合的命运共同体。', strengths: ['极高阶的情感共鸣与精神理解力', '主动表达爱意却不浮夸的真诚质感', '对伴侣喜好的超强记忆与体贴'], blindSpots: ['内心戏丰富，容易因对方一句无心之言暗自伤神', '完美主义倾向带来隐秘的情感疲惫'], match: 'APFD', matchDesc: '暖阳领航员的明朗行动力，能温柔驱散你偶尔泛起的思虑阴霾。', advice: '有委屈或期待时直接用温柔的语言说出来，不必总等对方去猜透心事。' },
+      ARSM: { code: 'ARSM', name: '追风旅人', en: 'Wind Chaser', motto: '心动时坦荡奔赴，相处时清风徐来、彼此成全。', language: '深夜长谈 · 审美共赏 · 默契留白', summary: '欣赏克制而高级的浪漫，敢于主动开启一段心仪的关系，却从不用爱去绑架对方，追求势均力敌、精神自由的理想恋情。', strengths: ['进退有度的分寸感与高级浪漫审美', '不内耗、不猜忌的坦荡恋爱观', '能成为伴侣最好的灵魂知己与启发者'], blindSpots: ['在伴侣极度渴望依赖时，可能显得过于冷静克制', '不擅长处理粘稠的情绪纠缠'], match: 'IRFD', matchDesc: '深海烟火表面克制实则深情炙热，与你的浪漫频率完美契合。', advice: '在伴侣脆弱的时刻，试着放下理性边界，给予一个更长时间的拥抱。' },
+      APFD: { code: 'APFD', name: '暖阳领航员', en: 'Sunlit Navigator', motto: '喜欢你，就是把你的未来规划进我每一天的行动里。', language: '务实行动 · 热烈夸奖 · 共同打拼', summary: '集热情开朗与靠谱担当于一身的行动派恋人，既会大声表达喜欢，更会用实实在在的陪伴、规划与资源为伴侣遮风挡雨。', strengths: ['极强的家庭责任感与行动力', '阳光积极，总能给伴侣带来确定感', '遇到问题第一时间解决而非指责'], blindSpots: ['有时过于注重解决问题而忽略先安抚情绪', '节奏较快，偶尔会替伴侣做决定'], match: 'IPSD', matchDesc: '静水守护神的细腻沉淀，与你的明朗领航构成最稳固的幸福闭环。', advice: '倾听伴侣倾诉时，先说“我懂你的感受”，再给出你的满分解决方案。' },
+      APFM: { code: 'APFM', name: '飒爽策展人', en: 'Vibrant Curator', motto: '最好的爱情是强强联手，各自闪耀又彼此欣赏。', language: '高质量约会 · 互相赋能 · 坦率沟通', summary: '明朗干练、热爱生活的现代派恋人，喜欢主动出击把握幸福，同时保持清醒的自我人格与事业追求，把恋爱经营成一场精彩的双人展。', strengths: ['沟通高效直接，极少冷暴力或猜疑', '积极向上，能带动伴侣一起变优秀', '独立自信，散发迷人的生活掌控感'], blindSpots: ['工作忙碌时容易把恋爱排在日程表靠后位置', '对过度粘人或情绪化表现缺乏耐心'], match: 'IPSM', matchDesc: '理智观测者与你同样清醒独立，默契度极高且毫无相处内耗。', advice: '每周预留一段“完全放下手机与工作”的专属甜蜜时光。' },
+      APSD: { code: 'APSD', name: '笃定筑梦师', en: 'Steadfast Builder', motto: '我不善华丽辞藻，但我说的每一句承诺都会一一兑现。', language: '生活照料 · 长期规划 · 踏实陪伴', summary: '主动而沉稳的守护型恋人，一旦认定一个人就会默默扛起未来的蓝图，用细水不流长的实际行动编织最令人安心的亲密关系。', strengths: ['极高的忠诚度与长线关系稳定性', '润物细无声的周全照料与担当', '遇事冷静可靠，是伴侣最坚实的后盾'], blindSpots: ['情感表达偏含蓄，有时让伴侣觉得缺乏浪漫惊喜', '习惯默默付出而不主动表达疲惫'], match: 'IRFD', matchDesc: '深海烟火丰沛的浪漫想象力，能为你们踏实的生活注入梦幻色彩。', advice: '偶尔制造一点不讲实用主义的小浪漫，会让伴侣开心很久。' },
+      APSM: { code: 'APSM', name: '清醒造物主', en: 'Lucid Architect', motto: '爱是两个成熟灵魂基于欣赏与信任的理性契约。', language: '尊重边界 · 深度交流 · 共同成长', summary: '目标明确、冷静务实，面对心仪对象会主动争取，进入关系后则保持高度理智与独立边界，厌恶戏剧化的情绪内耗。', strengths: ['极高的情绪稳定性与抗风险能力', '尊重伴侣隐私与个人发展空间', '坦诚务实，相处轻松无压迫感'], blindSpots: ['有时过于理性客观，在浪漫氛围中显得不够感性投入', '不轻易流露脆弱面'], match: 'IRFM', matchDesc: '月光漫游者的灵动浪漫，能在不越界的前提下软化你的理性外壳。', advice: '在爱人面前允许自己偶尔“不那么理智”，展露真实的感性一面。' },
+      IRFD: { code: 'IRFD', name: '深海烟火', en: 'Deep-Sea Fireworks', motto: '初见时安静如深海，爱上后便为你绽放整片夜空的烟火。', language: '专属偏爱 · 深度粘合 · 浪漫幻想', summary: '典型的“外冷内热极致深情者”。未确认心意前慢热克制，一旦彻底信任并交付真心，便会释放出排山倒海般的炽热依恋与浪漫想象。', strengths: ['极度专一深情，把伴侣视为世界中心', '极具仪式感与电影感的浪漫情怀', '细腻敏感，总能察觉伴侣最细微的需要'], blindSpots: ['慢热期较长容易错过缘分；深爱后又容易患得患失', '需要伴侣给予高频的安全感确认'], match: 'APSD', matchDesc: '笃定筑梦师的踏实回应与主动坚定，能给你最安心的归属感。', advice: '试着在心动初期多释放一点友好信号，让对的人更容易走近你。' },
+      IRFM: { code: 'IRFM', name: '月光漫游者', en: 'Moonlight Wanderer', motto: '我喜欢安静地欣赏月光，也期待懂我频率的灵魂不期而遇。', language: '精神共鸣 · 艺术分享 · 自由呼吸', summary: '内心藏着一座浪漫宇宙的慢热理想家，表面随性淡然，实则对精神契合有着极高标准。既渴望真挚心动，又坚守自我的精神花园。', strengths: ['独特的个人魅力与不落俗套的审美', '温柔包容、不强迫伴侣改变的气度', '一旦同频便能产生极深的精神愉悦'], blindSpots: ['习惯被动等待懂自己的人，不善主动破冰', '情绪低落时习惯独自躲起来消化'], match: 'ARFM', matchDesc: '自由极光的主动热情与同样的自由灵魂，能轻松带你开启浪漫奇遇。', advice: '遇到真正欣赏的人时，勇敢迈出第一步，你的真诚本身就极具吸引力。' },
+      IRSD: { code: 'IRSD', name: '灵魂共鸣者', en: 'Soul Resonator', motto: '千万人之中，我只渴望与你建立唯一而永恒的心灵联结。', language: '深度倾听 · 默契眼神 · 永恒承诺', summary: '追求极致灵魂契合的深情主义者，不轻易开启一段感情，但每一段关系都奔着一生一世的深度理解与相濡以沫而去。', strengths: ['无与伦比的共情深度与精神忠诚', '温柔坚定，能陪伴伴侣走过人生低谷', '注重关系质感而非表面浮华'], blindSpots: ['对伴侣的精神契合度要求极高，容易因落差感而隐秘失望', '不善直接表达愤怒与不满'], match: 'ARFD', matchDesc: '炽热骑士毫不掩饰的偏爱与行动，能彻底融化你的慢热防线。', advice: '接纳伴侣作为普通人的不完美，在真实磨合中培育更坚韧的爱。' },
+      IRSM: { code: 'IRSM', name: '雾林吟游者', en: 'Misty Bard', motto: '最好的陪伴，是各自看风景时，心里都知道对方在场。', language: '安静陪伴 · 思想碰撞 · 尊重独处', summary: '清冷文艺、内心丰盈的独立浪漫派。不喜欢喧嚣浮躁的恋爱套路，向往如清泉般澄澈、互不打扰却又灵魂相知的亲密关系。', strengths: ['极高的精神独立性与审美格调', '温柔克制、从不制造情绪负担', '能给伴侣带来宁静治愈的心灵空间'], blindSpots: ['情感表达过于含蓄，容易让热情型伴侣误以为不够在乎', '面对冲突倾向于冷处理'], match: 'ARFM', matchDesc: '自由极光的明朗温度，能恰到好处地点亮你安静的雾林世界。', advice: '适时用简短的话语向伴侣表达你的思念与肯定，别让爱意藏得太深。' },
+      IPFD: { code: 'IPFD', name: '温柔灯塔', en: 'Gentle Lighthouse', motto: '无论你航行多远，转身时我永远为你亮着一盏暖灯。', language: '暖心关怀 · 坚定支持 · 情绪安抚', summary: '慢热而深情的务实守护者，一旦接纳伴侣便会倾注满满的温暖与实际照料，用热烈而持久的善意托举起两个人的小日子。', strengths: ['极强的包容力、耐心与治愈能量', '把伴侣的冷暖安危放在心尖上的体贴', '既踏实靠谱又富有生活温度'], blindSpots: ['习惯默默付出与忍让，容易在关系中委屈自己', '慢热期需要较长时间建立信任'], match: 'APSM', matchDesc: '清醒造物主的果断规划力，与你的温暖守护形成绝佳互补。', advice: '先照顾好自己的情绪与需求，你的光芒才能更长久地照亮彼此。' },
+      IPFM: { code: 'IPFM', name: '松弛生活家', en: 'Relaxed Epicurean', motto: '不疾不徐，和你一起把平凡的三餐四季过成舒服的模样。', language: '美食共享 · 轻松幽默 · 互不勉强', summary: '随和通透、懂得享受当下的务实恋人。慢热而不冷漠，重视真实的生活质感与相处的舒适度，从不给伴侣制造焦虑与束缚。', strengths: ['极佳的相处松弛感与生活情趣', '情绪平和，善于在日常小事中发现快乐', '尊重彼此节奏，不强求、不控制'], blindSpots: ['面对需要严肃规划的长远议题时容易拖延回避', '不喜主动制造轰轰烈烈的浪漫'], match: 'ARSD', matchDesc: '星河诗人的走心深情，能为你们轻松惬意的生活增添深刻记忆。', advice: '在关键节点上多展现一些明确的态度与担当，会让伴侣更依赖你。' },
+      IPSD: { code: 'IPSD', name: '静水守护神', en: 'Still-Water Guardian', motto: '深水静流，最长情的告白是岁月里无声的并肩。', language: '可靠兑现 · 细节呵护 · 忠诚陪伴', summary: '内敛、务实、极度重情义的守护型恋人。不善言辞却行胜于言，将全部深情化作生活里滴水不漏的照顾与坚不可摧的忠诚。', strengths: ['极高的信任度与长久相守的定力', '务实细心，总能提前帮伴侣打点好一切', '不浮躁、不攀比的纯粹真心'], blindSpots: ['过于内敛克制，内心积压压力时也不轻易开口', '对关系中的突发变化缺乏安全感'], match: 'APFD', matchDesc: '暖阳领航员的热情开朗与行动力，与你的静水深流天生一对。', advice: '学会向爱人敞开内心的小脆弱，被需要与被照顾同样是亲密的乐趣。' },
+      IPSM: { code: 'IPSM', name: '理智观测者', en: 'Rational Observer', motto: '最好的亲密关系，是彼此清醒独立、又坚定选择对方。', language: '智慧对话 · 空间尊重 · 稳定信任', summary: '冷静克制、独立自主的理智型恋人。不会因为寂寞而将就，只有经过时间与理智双重验证的伴侣，才能走进你沉静而深邃的内心。', strengths: ['极高的情绪自控力与理性沟通能力', '给予伴侣充分的自由与信任空间', '不猜忌、不控制，关系健康纯粹'], blindSpots: ['外在气场偏冷，有时让伴侣觉得难以窥见你的真实情绪', '不擅长用甜言蜜语哄人开心'], match: 'APFM', matchDesc: '飒爽策展人的明朗高效与同样独立的灵魂，与你沟通零障碍。', advice: '尝试在日常中多表达直白的赞美与依恋，理性之外的温柔最动人。' }
+    };
+
+    const LOVE_QUESTIONS = [
+      { id: 1, dim: 'AI', dir: 1, text: '遇到真正令你心动的人时，你更倾向于主动创造接触机会并释放好感，而不是被动等待。' },
+      { id: 2, dim: 'AI', dir: -1, text: '在感情初期，即使内心很有好感，你也会习惯先冷静观察一段时间再慢慢敞开心扉。' },
+      { id: 3, dim: 'AI', dir: 1, text: '如果对关系走向有疑问，你通常会选择坦率直接地找对方聊清楚，不喜欢反复猜测。' },
+      { id: 4, dim: 'AI', dir: -1, text: '你很少在暧昧阶段主动表白，往往需要感受到对方足够明确的坚定后才敢交付真心。' },
+      { id: 5, dim: 'RP', dir: 1, text: '相比于现实条件的权衡，灵魂层面的精神共鸣与宿命般的浪漫心动对你来说更为重要。' },
+      { id: 6, dim: 'RP', dir: -1, text: '评估一段长久关系时，三观契合、生活习惯匹配与未来规划的务实可行性是你的首要考量。' },
+      { id: 7, dim: 'RP', dir: 1, text: '纪念日里的手写信、突如其来的小惊喜或深夜散步，能为你注入极强的爱情能量。' },
+      { id: 8, dim: 'RP', dir: -1, text: '相比于华丽的浪漫承诺，生病时递来的一杯热水与日常琐事的可靠分担更能打动你。' },
+      { id: 9, dim: 'FS', dir: 1, text: '爱一个人时，你习惯把“我想你”“你真棒”等赞美与依恋热烈而直接地表达出来。' },
+      { id: 10, dim: 'FS', dir: -1, text: '你的爱意往往深沉而内敛，更多体现在默默记住对方的喜好与细节，而非挂在嘴边。' },
+      { id: 11, dim: 'FS', dir: 1, text: '开心或难过时，你很自然地希望第一时间与伴侣分享情绪波动，享受热烈的情感互动。' },
+      { id: 12, dim: 'FS', dir: -1, text: '即使在最亲密的伴侣面前，你也会习惯先消化好激烈的情绪，再用平和克制的方式沟通。' },
+      { id: 13, dim: 'DM', dir: 1, text: '你理想中的亲密关系是高度交融的“我们”，喜欢高频陪伴并深度参与彼此的生活圈子。' },
+      { id: 14, dim: 'DM', dir: -1, text: '即使在热恋中，你也必须保留属于自己的独处时间与独立精神空间，否则会感到窒息。' },
+      { id: 15, dim: 'DM', dir: 1, text: '做重要的人生选择时，你很自然地会把伴侣的意愿与两个人的共同未来放在第一位。' },
+      { id: 16, dim: 'DM', dir: -1, text: '你认为最好的爱情是“各自独立又彼此欣赏”，双方都应拥有互不干涉的社交与事业领域。' }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 4. 12 Archetype 荣格12原型数据库
+    // ----------------------------------------------------------------------------
+    const ARCHETYPE_QUADRANTS = {
+      ORDER: { name: '秩序掌控象限', color: '#7B3F9E', bg: '#f3eaf8' },
+      MASTERY: { name: '突破荣耀象限', color: '#dc2626', bg: '#fee2e2' },
+      FREEDOM: { name: '自由探索象限', color: '#0284c7', bg: '#e0f2fe' },
+      BELONGING: { name: '联结欢愉象限', color: '#d97706', bg: '#fef3c7' }
+    };
+
+    const JUNG_ARCHETYPES = [
+      { code: 'RULER', name: '统治者', en: 'The Ruler', quad: 'ORDER', desire: '建立有序、繁荣且可控的体系与格局', fear: '失控、混乱与被剥夺主导权', strategy: '制定清晰规则、整合核心资源并承担最终责任', shadow: '陷入阴影面时，可能变得过度控制、固执己见或对他人缺乏信任。', growth: '学会授权与倾听多元声音，真正的权威源于成全他人而非单纯掌控。' },
+      { code: 'CREATOR', name: '创造者', en: 'The Creator', quad: 'ORDER', desire: '将脑海中的独特愿景转化为具有永恒价值的作品', fear: '平庸同质化、缺乏自我表达与创意枯竭', strategy: '不断打磨审美、技艺与原创构想，赋予事物新形态', shadow: '陷入阴影面时，可能因过度完美主义而迟迟无法交付，或陷入自我怀疑。', growth: '拥抱“先完成再完美”的迭代节奏，允许作品在真实世界中呼吸成长。' },
+      { code: 'CAREGIVER', name: '照顾者', en: 'The Caregiver', quad: 'ORDER', desire: '保护、滋养并成全身边所爱之人', fear: '自私冷漠、无力帮助他人的无助感', strategy: '以无私的善意、耐心与实际行动关怀他人需求', shadow: '陷入阴影面时，容易因过度付出而产生委屈感，或形成讨好与牺牲情结。', growth: '建立健康的个人边界，明白先滋养好自己才能拥有源源不断的爱。' },
+      { code: 'HERO', name: '英雄', en: 'The Hero', quad: 'MASTERY', desire: '通过勇气、自律与实力跨越艰难险阻，证明自身价值', fear: '软弱退缩、无能为力与在关键时刻掉链子', strategy: '迎难而上、持续锤炼硬实力并捍卫正义与目标', shadow: '陷入阴影面时，容易陷入“永远在战斗”的紧绷状态，把一切关系看作胜负博弈。', growth: '允许自己卸下铠甲休息，承认脆弱并非软弱，而是完整人性的一部分。' },
+      { code: 'OUTLAW', name: '反叛者', en: 'The Outlaw', quad: 'MASTERY', desire: '打破陈腐僵化的教条，推动颠覆性的变革与觉醒', fear: '随波逐流、被平庸体制同化而失去锋芒', strategy: '质疑既定权威、破除不合理规则并开辟全新赛道', shadow: '陷入阴影面时，可能陷入“为了反对而反对”的破坏性执念，难以建立长久建设。', growth: '在破旧之后赋予立新的方向，让你的锋芒成为推动进步的建设性力量。' },
+      { code: 'MAGICIAN', name: '魔术师', en: 'The Magician', quad: 'MASTERY', desire: '洞悉宇宙与心理的深层运作法则，实现从不可能到可能的转化', fear: '狭隘短视、陷入机械僵化而失去灵性洞察', strategy: '连接直觉与规律，催化人心与局势的深层蜕变', shadow: '陷入阴影面时，可能倾向于暗中操控局势，或过度沉迷于神秘空想而脱离现实。', growth: '将高维洞察落地为真诚透明的赋能行动，成为照亮他人的催化剂。' },
+      { code: 'EXPLORER', name: '探索者', en: 'The Explorer', quad: 'FREEDOM', desire: '体验广阔世界的多样性，寻找最真实、不被定义的自我', fear: '被困在千篇一律的格子间、失去自由与好奇心', strategy: '不断走出舒适圈，在未知旅程与新鲜体验中扩展边界', shadow: '陷入阴影面时，容易因害怕被束缚而逃避深度承诺，陷入漫无目的的漂泊。', growth: '发现向内探索与深度联结同样是一场壮丽的冒险，自由源于内心而非逃离。' },
+      { code: 'SAGE', name: '智者', en: 'The Sage', quad: 'FREEDOM', desire: '通过理性思辨、客观观察与持续学习抵达真理', fear: '被表象蒙蔽、陷入偏见、无知与盲从', strategy: '保持独立客观的研究态度，系统梳理信息并提炼智慧', shadow: '陷入阴影面时，可能变得过度冷漠抽离、高高在上，陷入“只思考不行动”的象牙塔。', growth: '让智慧融入烟火人间的温度，用通俗而慈悲的方式分享你的洞见。' },
+      { code: 'INNOCENT', name: '天真者', en: 'The Innocent', quad: 'FREEDOM', desire: '保持内心的澄澈、信任与对美好生活的纯粹向往', fear: '被复杂算计污染、失去信念与快乐的初心', strategy: '怀抱善意与乐观心态，在简单纯粹中守护精神家园', shadow: '陷入阴影面时，可能倾向于否认现实中的阴暗面，对复杂冲突采取天真回避态度。', growth: '培育“看清生活真相后依然热爱生活”的成熟纯真，让善良自带锋芒。' },
+      { code: 'LOVER', name: '情人', en: 'The Lover', quad: 'BELONGING', desire: '与所爱之人、艺术之美及生命热情建立深度感官与灵魂连接', fear: '孤独隔离、不被渴望与失去生命的热烈质感', strategy: '全情投入情感体验，追求审美愉悦与身心合一的共鸣', shadow: '陷入阴影面时，容易过度依附于他人的认可与浪漫幻想，在关系波动中迷失自我。', growth: '先与自己谈一场深刻而笃定的恋爱，让丰盈的内在吸引同频的灵魂。' },
+      { code: 'EVERYMAN', name: '凡人', en: 'The Everyman', quad: 'BELONGING', desire: '在平等、真诚与互助的群体归属感中踏实生活', fear: '被排斥孤立、显得格格不入或高高在上', strategy: '以接地气的真诚、同理心与团队精神连接每一个人', shadow: '陷入阴影面时，可能为了融入群体而压抑真实个性，过度随大流。', growth: '接纳自己与众不同的闪光点，真正的归属感源于做真实的自己。' },
+      { code: 'JESTER', name: '小丑', en: 'The Jester', quad: 'BELONGING', desire: '活在当下、尽情欢笑，用幽默与机智消解生活的沉重', fear: '枯燥乏味、死气沉沉与过度严肃的说教', strategy: '以游戏精神、自嘲幽默与灵动创意点亮周围氛围', shadow: '陷入阴影面时，可能用玩笑逃避严肃的责任与深层痛苦，显得不够可靠。', growth: '在幽默智慧之外承接应有的担当，做一名既能带来欢笑又能让人依靠的智者。' }
+    ];
+
+    const ARCHETYPE_QUESTIONS = [
+      { id: 1, arch: 'RULER', text: '在团队或集体项目中，你喜欢亲自制定清晰的规则与架构，确保一切按高标准有序运转。' },
+      { id: 2, arch: 'RULER', text: '对你而言，拥有掌控局面的话语权与整合核心资源的能力，能带来极强的成就感。' },
+      { id: 3, arch: 'CREATOR', text: '你对审美与原创性有着近乎偏执的追求，渴望亲手创造出带有你独特印记的作品或方案。' },
+      { id: 4, arch: 'CREATOR', text: '相比于直接套用现成模板，从零开始构思一个前所未有的新概念更能点燃你的激情。' },
+      { id: 5, arch: 'CAREGIVER', text: '看到身边的人陷入困境或疲惫时，你总会本能地伸出援手，哪怕需要牺牲自己的休息时间。' },
+      { id: 6, arch: 'CAREGIVER', text: '能够用自己的细心照料与支持，帮助他人成长并感到安心，是你生命中最大的幸福来源之一。' },
+      { id: 7, arch: 'HERO', text: '面对看似不可能完成的硬仗或高压挑战，你非但不会退缩，反而会激发出强烈的斗志。' },
+      { id: 8, arch: 'HERO', text: '你信奉用实力、自律与行动说话，渴望在关键时刻站出来捍卫公平与团队荣誉。' },
+      { id: 9, arch: 'OUTLAW', text: '对于那些陈旧僵化、只因“一直如此”而存在的教条，你总忍不住想要打破和重构。' },
+      { id: 10, arch: 'OUTLAW', text: '你不在乎是否符合主流大众的期待，宁愿做特立独行的破局者，也不愿随波逐流。' },
+      { id: 11, arch: 'MAGICIAN', text: '你着迷于洞察事物背后的深层因果与心理规律，享受把看似不可能的局面转化为现实的瞬间。' },
+      { id: 12, arch: 'MAGICIAN', text: '你常常能敏锐感知到微妙的直觉与契机，在关键节点上催化团队或个人发生脱胎换骨的转变。' },
+      { id: 13, arch: 'EXPLORER', text: '一成不变的日常会让你感到窒息，你渴望不断前往未知的领域、体验新鲜的生活方式。' },
+      { id: 14, arch: 'EXPLORER', text: '对你来说，自由探索与忠于内心的真实体验，远比世俗意义上的稳定头衔更重要。' },
+      { id: 15, arch: 'SAGE', text: '面对任何观点或热潮，你都习惯先独立查证事实、冷静分析逻辑，追求客观透彻的真相。' },
+      { id: 16, arch: 'SAGE', text: '深度阅读、系统思考与拆解复杂知识体系，是你获得内心宁静与智慧愉悦的核心方式。' },
+      { id: 17, arch: 'INNOCENT', text: '无论经历过多少复杂世事，你内心深处依然愿意相信人性的善意与生活本真的美好。' },
+      { id: 18, arch: 'INNOCENT', text: '你向往简单、纯粹、没有尔虞我诈的人际环境，习惯用真诚坦荡的心态对待世界。' },
+      { id: 19, arch: 'LOVER', text: '你对美、艺术、浪漫氛围以及人与人之间深度的情感共鸣有着极高的敏锐度与渴望。' },
+      { id: 20, arch: 'LOVER', text: '全情投入一段深情的关系或热爱的事物，让你强烈感受到自己鲜活地存在于这个世界上。' },
+      { id: 21, arch: 'EVERYMAN', text: '你非常看重平等、真诚与团队归属感，不喜欢高高在上的姿态，乐于与大家打成一片。' },
+      { id: 22, arch: 'EVERYMAN', text: '在平凡踏实的日常互助中与朋友们建立深厚情谊，能带给你最稳固的心灵安全感。' },
+      { id: 23, arch: 'JESTER', text: '你擅长用幽默自嘲与机智玩笑化解尴尬与沉重，总能把枯燥的场合变成欢乐的海洋。' },
+      { id: 24, arch: 'JESTER', text: '人生苦短，活在当下、尽情享受每一刻的乐趣与创意火花，是你最核心的生活哲学。' }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 5. MBTI Duality 双面人格数据库
+    // ----------------------------------------------------------------------------
+    const DUALITY_QUESTIONS = [
+      // 表层显性人格 (Day Persona: 10题)
+      { id: 1, layer: 'day', dim: 'EI', dir: 1, text: '【白昼社交】在公开会议或社交聚会上，你通常显得主动健谈、善于快速破冰并带动气氛。' },
+      { id: 2, layer: 'day', dim: 'EI', dir: -1, text: '【白昼社交】在公共场合中，你给人的第一印象通常是安静克制、倾听多于发言的。' },
+      { id: 3, layer: 'day', dim: 'SN', dir: 1, text: '【白昼处事】向他人汇报或沟通事务时，你习惯用具体的数据、事实案例和可落地的步骤说话。' },
+      { id: 4, layer: 'day', dim: 'SN', dir: -1, text: '【白昼处事】与人探讨方向时，你总忍不住跳出眼前细节，畅谈宏观愿景与未来可能性。' },
+      { id: 5, layer: 'day', dim: 'TF', dir: 1, text: '【白昼决策】在公开决策与合作中，你展现出冷静理性、就事论事、原则分明的职业风格。' },
+      { id: 6, layer: 'day', dim: 'TF', dir: -1, text: '【白昼决策】与同事或朋友相处时，你总是优先顾及对方的面子与情绪感受，显得温和体谅。' },
+      { id: 7, layer: 'day', dim: 'JP', dir: 1, text: '【白昼形象】在他人眼中，你是一个时间观念强、日程井井有条、做事有始有终的靠谱角色。' },
+      { id: 8, layer: 'day', dim: 'JP', dir: -1, text: '【白昼形象】身边的人常觉得你随性洒脱、适应力极强，不喜欢被死板的条条框框限制。' },
+      { id: 9, layer: 'day', dim: 'EI', dir: 1, text: '【白昼社交】即使当天有些疲惫，只要进入工作或社交角色，你依然能展现出大方得体的外向状态。' },
+      { id: 10, layer: 'day', dim: 'TF', dir: 1, text: '【白昼决策】面对外部争议时，你习惯把个人情绪藏在专业面具之后，保持客观冷静的姿态。' },
+      // 深夜潜意识人格 (Night Persona: 10题)
+      { id: 11, layer: 'night', dim: 'EI', dir: 1, text: '【深夜/亲密】在极度信任的挚友面前，平时安静的你其实话匣子一开就停不下来，甚至有点话痨。' },
+      { id: 12, layer: 'night', dim: 'EI', dir: -1, text: '【深夜/独处】卸下白天的所有社交角色后，夜晚的你极度渴望完全的静默独处，连消息都不想回复。' },
+      { id: 13, layer: 'night', dim: 'SN', dir: 1, text: '【深夜/压力】当内心疲惫或压力过大时，你其实只想通过美食、睡眠或整理房间等具体感官小事来治愈自己。' },
+      { id: 14, layer: 'night', dim: 'SN', dir: -1, text: '【深夜/独处】夜深人静时，平时务实的你脑海里常会涌现出大量天马行空的哲学思考与浪漫幻想。' },
+      { id: 15, layer: 'night', dim: 'TF', dir: 1, text: '【深夜/独处】在无人知晓的内心深处，你其实有着极其清醒冷峻的评判标尺，对人和事看得比表面透彻得多。' },
+      { id: 16, layer: 'night', dim: 'TF', dir: -1, text: '【深夜/亲密】脱下白天的理性铠甲后，你内心其实非常柔软敏感，容易被一部电影或一句关怀触动泪点。' },
+      { id: 17, layer: 'night', dim: 'JP', dir: 1, text: '【深夜/压力】虽然平时看似随性佛系，但一旦遭遇核心危机，你内心隐藏的强迫症与掌控欲就会立刻接管全局。' },
+      { id: 18, layer: 'night', dim: 'JP', dir: -1, text: '【深夜/独处】白天维持了一整天的自律与条理后，回到私密空间的你其实只想彻底摆烂、随心所欲。' },
+      { id: 19, layer: 'night', dim: 'SN', dir: -1, text: '【深夜/亲密】在灵魂伴侣面前，你渴望聊的从来不是日常琐事，而是宇宙、命运与内心深处的隐秘渴望。' },
+      { id: 20, layer: 'night', dim: 'JP', dir: -1, text: '【深夜/独处】你内心深处其实向往着一场说走就走、彻底摆脱所有日程表的绝对自由。' }
+    ];
+
+    /**
+     * ============================================================================
+     * 二、全局状态管理与本地持久化
+     * ============================================================================
+     */
+    const state = {
+      tab: 'tests', // 'tests' | 'atlas' | 'profile'
+      stage: 'portal', // 'portal' | 'intro' | 'quiz' | 'result'
+      activeTest: null, // 'mbti64' | 'animal' | 'love' | 'archetype' | 'duality'
+      mbtiMode: 'quick', // 'quick' (24题) | 'pro' (48题)
+      questions: [],
+      qIndex: 0,
+      answers: {},
+      result: null,
+      dualityViewMode: 'both', // 'both' | 'day' | 'night'
+      dualitySim: { day: 'ENTJ', night: 'INFP' },
+      atlasTab: 'mbti64', // 'mbti64' | 'animal' | 'love' | 'archetype' | 'duality'
+      atlasFilter: {
+        search: '',
+        temp: 'ALL',
+        base: 'ALL',
+        ao: 'ALL',
+        hc: 'ALL'
+      },
+      posterNickname: '',
+      confirmClearHistory: false,
+      history: []
+    };
+
+    const STORAGE_KEY = 'personality_64_unified_lab_v1';
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        state.history = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        state.history = [];
+      }
+      updateHistoryBadge();
+    }
+
+    function saveHistory(record) {
+      try {
+        state.history.unshift(record);
+        if (state.history.length > 50) state.history = state.history.slice(0, 50);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.history));
+        updateHistoryBadge();
+      } catch (e) {}
+    }
+
+    function updateHistoryBadge() {
+      const el = document.getElementById('history-count');
+      if (!el) return;
+      if (state.history.length > 0) {
+        el.textContent = state.history.length;
+        el.style.display = 'inline-flex';
+      } else {
+        el.style.display = 'none';
+      }
+    }
+
+    function switchTab(tabName) {
+      state.tab = tabName;
+      state.confirmClearHistory = false;
+      if (tabName === 'tests') {
+        state.stage = 'portal';
+      }
+      ['tests', 'atlas', 'profile'].forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        if (btn) btn.classList.toggle('active', t === tabName);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    /**
+     * ============================================================================
+     * 三、低多边形粉彩背景与五大定制主题矢量插画 (纯SVG)
+     * ============================================================================
+     */
+    function getLowPolyBgSVG(testId) {
+      const palettes = {
+        mbti64:    ['#EBF6FD', '#DCEFFA', '#CDE6F7', '#F4FAFE', '#BFE0F5'],
+        animal:    ['#FAF1E6', '#F6E5D0', '#F2DEC6', '#FDF7F0', '#EED4B7'],
+        love:      ['#FCEBF1', '#FADCE7', '#F7D4E1', '#FEF4F7', '#F4C6D7'],
+        archetype: ['#F3EAF8', '#EADBF4', '#E1CCF0', '#F9F4FC', '#D6BBE9'],
+        duality:   ['#EBF2FE', '#DCE8FD', '#CEDEFC', '#F4F8FF', '#BFD4FA']
+      };
+      const c = palettes[testId] || palettes.mbti64;
+      return `
+        <svg class="banner-poly-bg" viewBox="0 0 800 260" preserveAspectRatio="none">
+          <rect width="800" height="260" fill="${c[0]}"/>
+          <polygon points="0,0 240,0 140,130 0,110" fill="${c[3]}" opacity="0.82"/>
+          <polygon points="240,0 480,0 360,120 140,130" fill="${c[1]}" opacity="0.72"/>
+          <polygon points="480,0 800,0 660,140 360,120" fill="${c[2]}" opacity="0.78"/>
+          <polygon points="800,0 800,260 660,140" fill="${c[4]}" opacity="0.68"/>
+          <polygon points="0,110 140,130 90,260 0,260" fill="${c[1]}" opacity="0.72"/>
+          <polygon points="140,130 360,120 290,260 90,260" fill="${c[3]}" opacity="0.68"/>
+          <polygon points="360,120 660,140 540,260 290,260" fill="${c[2]}" opacity="0.72"/>
+          <polygon points="660,140 800,260 540,260" fill="${c[4]}" opacity="0.82"/>
+        </svg>
+      `;
+    }
+
+    function getBannerArtworkSVG(testId) {
+      if (testId === 'mbti64') {
+        return `
+          <svg viewBox="0 0 320 220" fill="none">
+            <g transform="translate(105, 16)">
+              <path d="M18,64 L78,64 L90,150 L6,150 Z" fill="#15803D"/>
+              <circle cx="48" cy="40" r="22" fill="#FDE68A"/>
+              <path d="M26,38 Q48,12 70,38 L74,74 L64,74 L64,42 L32,42 L32,74 L22,74 Z" fill="#94A3B8"/>
+              <polygon points="36,52 60,52 48,88" fill="#F8FAFC"/>
+            </g>
+            <g transform="translate(194, 34)">
+              <path d="M18,58 L70,58 L80,156 L8,156 Z" fill="#22C55E"/>
+              <circle cx="44" cy="34" r="20" fill="#FEF3C7"/>
+              <path d="M22,36 Q44,8 66,36 L68,72 L58,72 L58,38 L30,38 L30,72 L20,72 Z" fill="#A3E635"/>
+              <line x1="86" y1="84" x2="86" y2="124" stroke="#16A34A" stroke-width="3"/>
+              <circle cx="81" cy="79" r="6" fill="#4ADE80"/><circle cx="91" cy="79" r="6" fill="#4ADE80"/>
+              <circle cx="81" cy="89" r="6" fill="#22C55E"/><circle cx="91" cy="89" r="6" fill="#22C55E"/>
+            </g>
+            <g transform="translate(46, 86)">
+              <rect x="20" y="52" width="48" height="82" rx="14" fill="#2563EB"/>
+              <circle cx="44" cy="30" r="20" fill="#FDE68A"/>
+              <path d="M22,28 Q44,4 66,28 Z" fill="#1D4ED8"/>
+              <rect x="29" y="26" width="12" height="8" rx="2" stroke="#0F172A" stroke-width="2" fill="#FFFFFF"/>
+              <rect x="47" y="26" width="12" height="8" rx="2" stroke="#0F172A" stroke-width="2" fill="#FFFFFF"/>
+              <polygon points="6,66 34,58 40,96 12,104" fill="#3B82F6"/>
+            </g>
+            <g transform="translate(154, 96)">
+              <rect x="18" y="48" width="48" height="76" rx="14" fill="#F59E0B"/>
+              <circle cx="42" cy="28" r="19" fill="#FDE68A"/>
+              <path d="M22,24 Q42,4 62,24 Z" fill="#FBBF24"/>
+              <rect x="27" y="23" width="13" height="7" rx="2" fill="#111827"/>
+              <rect x="44" y="23" width="13" height="7" rx="2" fill="#111827"/>
+            </g>
+          </svg>
+        `;
+      }
+      if (testId === 'animal') {
+        return `
+          <svg viewBox="0 0 320 220" fill="none">
+            <polygon points="10,220 95,125 180,220" fill="#CBD5E1" opacity="0.55"/>
+            <polygon points="130,220 225,115 315,220" fill="#94A3B8" opacity="0.45"/>
+            <g transform="translate(88, 18)">
+              <polygon points="48,4 78,16 90,48 76,82 48,92 20,82 6,48 18,16" fill="#B45309"/>
+              <polygon points="48,12 72,22 80,48 68,74 48,82 28,74 16,48 24,22" fill="#D97706"/>
+              <polygon points="48,24 66,34 64,60 48,70 32,60 30,34" fill="#FBBF24"/>
+              <polygon points="38,42 44,42 41,46" fill="#451A03"/><polygon points="52,42 58,42 55,46" fill="#451A03"/>
+              <polygon points="44,52 52,52 48,58" fill="#78350F"/>
+            </g>
+            <g transform="translate(185, 34)">
+              <polygon points="24,18 32,2 40,20" fill="#64748B"/><polygon points="56,20 64,2 72,18" fill="#475569"/>
+              <polygon points="20,20 48,14 76,20 82,56 48,84 14,56" fill="#94A3B8"/>
+              <polygon points="26,34 48,28 70,34 62,68 48,78 34,68" fill="#E2E8F0"/>
+              <polygon points="44,58 52,58 48,64" fill="#0F172A"/>
+            </g>
+            <g transform="translate(36, 98)">
+              <polygon points="16,22 22,4 34,20" fill="#EA580C"/><polygon points="54,20 66,4 72,22" fill="#C2410C"/>
+              <polygon points="14,22 44,16 74,22 80,54 44,78 8,54" fill="#F97316"/>
+              <polygon points="10,48 32,52 44,76 22,68" fill="#FFF7ED"/><polygon points="78,48 56,52 44,76 66,68" fill="#FFF7ED"/>
+              <polygon points="40,62 48,62 44,68" fill="#1E293B"/>
+            </g>
+            <g transform="translate(118, 114)">
+              <ellipse cx="42" cy="54" rx="30" ry="38" fill="#78350F"/><ellipse cx="42" cy="58" rx="22" ry="28" fill="#FDE68A"/>
+              <circle cx="31" cy="36" r="11" fill="#FEF3C7" stroke="#92400E" stroke-width="2"/><circle cx="53" cy="36" r="11" fill="#FEF3C7" stroke="#92400E" stroke-width="2"/>
+              <circle cx="31" cy="36" r="5" fill="#1E293B"/><circle cx="53" cy="36" r="5" fill="#1E293B"/>
+              <polygon points="39,42 45,42 42,50" fill="#D97706"/>
+            </g>
+            <g transform="translate(202, 102)">
+              <path d="M34,26 L26,6 M26,14 L18,10 M54,26 L62,6 M62,14 L70,10" stroke="#92400E" stroke-width="3" stroke-linecap="round"/>
+              <polygon points="24,26 44,22 64,26 60,64 44,82 28,64" fill="#D97706"/>
+              <polygon points="32,48 44,44 56,48 44,80" fill="#FEF3C7"/>
+              <circle cx="35" cy="40" r="3.5" fill="#1E293B"/><circle cx="53" cy="40" r="3.5" fill="#1E293B"/>
+            </g>
+          </svg>
+        `;
+      }
+      if (testId === 'love') {
+        return `
+          <svg viewBox="0 0 320 220" fill="none">
+            <g transform="translate(95, 12)">
+              <polygon points="95,36 52,6 12,36 22,86 95,146 168,86 178,36 138,6" fill="#F472B6" opacity="0.35"/>
+              <polygon points="95,36 52,6 95,88" fill="#FB7185" opacity="0.45"/>
+              <polygon points="95,36 138,6 95,88" fill="#F43F5E" opacity="0.35"/>
+              <polygon points="12,36 52,6 95,88 22,86" fill="#FDA4AF" opacity="0.5"/>
+              <polygon points="178,36 138,6 95,88 168,86" fill="#E11D48" opacity="0.28"/>
+            </g>
+            <g transform="translate(46, 86)">
+              <rect x="20" y="54" width="44" height="72" rx="14" fill="#1E3A8A"/>
+              <circle cx="42" cy="34" r="20" fill="#FDE68A"/>
+              <path d="M22,30 Q42,10 62,30 Z" fill="#451A03"/>
+              <rect x="27" y="29" width="13" height="8" rx="3" fill="#111827"/><rect x="44" y="29" width="13" height="8" rx="3" fill="#111827"/>
+            </g>
+            <g transform="translate(115, 58)">
+              <rect x="22" y="56" width="46" height="82" rx="16" fill="#9333EA"/>
+              <circle cx="45" cy="34" r="21" fill="#FEF3C7"/>
+              <path d="M23,32 Q45,6 67,32 Q62,18 45,20 Q28,18 23,32 Z" fill="#94A3B8"/>
+              <path d="M40,42 Q45,47 50,42" stroke="#E11D48" stroke-width="2.2" stroke-linecap="round"/>
+            </g>
+            <g transform="translate(192, 88)">
+              <path d="M22,56 L66,56 L76,126 L12,126 Z" fill="#FFF1F2"/>
+              <circle cx="44" cy="34" r="20" fill="#FDE68A"/>
+              <path d="M20,36 Q24,10 44,12 Q64,10 68,36 Q66,64 60,68 L28,68 Q22,64 20,36 Z" fill="#B45309"/>
+              <circle cx="32" cy="40" r="3" fill="#FDA4AF"/><circle cx="56" cy="40" r="3" fill="#FDA4AF"/>
+            </g>
+          </svg>
+        `;
+      }
+      if (testId === 'archetype') {
+        return `
+          <svg viewBox="0 0 320 220" fill="none">
+            <g transform="translate(106, 14)">
+              <path d="M16,74 L92,74 L106,140 L2,140 Z" fill="#991B1B"/>
+              <circle cx="54" cy="52" r="22" fill="#FDE68A"/>
+              <polygon points="30,34 38,14 48,28 54,10 60,28 70,14 78,34" fill="#F59E0B" stroke="#B45309" stroke-width="1.5"/>
+              <rect x="30" y="32" width="48" height="7" rx="2" fill="#FBBF24"/>
+            </g>
+            <g transform="translate(198, 42)">
+              <path d="M22,68 L74,68 L84,155 L12,155 Z" fill="#5B21B6"/>
+              <circle cx="48" cy="48" r="19" fill="#FEF3C7"/>
+              <polygon points="18,36 78,36 48,2" fill="#6D28D9"/>
+              <ellipse cx="48" cy="36" rx="34" ry="7" fill="#7C3AED"/>
+              <circle cx="78" cy="96" r="16" fill="#C084FC" opacity="0.45"/><circle cx="78" cy="96" r="10" fill="#E879F9"/>
+            </g>
+            <g transform="translate(26, 92)">
+              <rect x="18" y="48" width="42" height="74" rx="12" fill="#D97706"/>
+              <circle cx="39" cy="28" r="18" fill="#FDE68A"/>
+              <ellipse cx="39" cy="16" rx="28" ry="6" fill="#92400E"/>
+              <path d="M23,16 Q39,2 55,16 Z" fill="#B45309"/>
+            </g>
+            <g transform="translate(108, 96)">
+              <rect x="24" y="48" width="48" height="76" rx="14" fill="#64748B"/>
+              <path d="M24,48 L48,74 L72,48 Z" fill="#DC2626"/>
+              <circle cx="48" cy="28" r="19" fill="#FDE68A"/>
+              <polygon points="78,18 84,18 86,86 76,86" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+              <rect x="68" y="84" width="26" height="6" rx="2" fill="#F59E0B"/>
+            </g>
+          </svg>
+        `;
+      }
+      return `
+        <svg viewBox="0 0 320 220" fill="none">
+          <circle cx="82" cy="48" r="24" fill="#FDE047" opacity="0.85"/>
+          <path d="M258,26 A22,22 0 1,0 280,54 A17,17 0 1,1 258,26 Z" fill="#93C5FD"/>
+          <g transform="translate(64, 52)">
+            <path d="M24,62 L76,62 L88,168 L12,168 Z" fill="#10B981"/>
+            <circle cx="50" cy="36" r="22" fill="#FEF3C7"/>
+            <path d="M24,38 Q26,8 50,10 Q74,8 76,38 L78,76 L66,76 L66,40 L34,40 L34,76 L22,76 Z" fill="#FBBF24"/>
+            <line x1="16" y1="88" x2="16" y2="128" stroke="#059669" stroke-width="3"/>
+            <circle cx="11" cy="83" r="6" fill="#4ADE80"/><circle cx="21" cy="83" r="6" fill="#4ADE80"/>
+            <circle cx="11" cy="93" r="6" fill="#22C55E"/><circle cx="21" cy="93" r="6" fill="#22C55E"/>
+          </g>
+          <g transform="translate(172, 52)">
+            <path d="M24,62 L76,62 L88,168 L12,168 Z" fill="#1E40AF"/>
+            <circle cx="50" cy="36" r="22" fill="#FDE68A"/>
+            <path d="M24,38 Q26,8 50,10 Q74,8 76,38 L78,76 L66,76 L66,40 L34,40 L34,76 L22,76 Z" fill="#475569"/>
+            <rect x="77" y="108" width="18" height="24" rx="5" fill="#FDE047" stroke="#92400E" stroke-width="2"/>
+          </g>
+        </svg>
+      `;
+    }
+
+    /**
+     * ============================================================================
+     * 四、纯 SVG 可视化组件（徽章、6轴六边形雷达图、4轴雷达图、12辐极坐标图、反差圆环）
+     * ============================================================================
+     */
+    function renderEmblemSVG(testId, code, color, size = 96) {
+      if (testId === 'mbti64') {
+        const isJ = code && code[3] === 'J';
+        const isT = code && code[2] === 'T';
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="${color}" stroke-width="2.5"/>
+            ${isJ
+              ? `<polygon points="50,10 80,22 90,50 80,78 50,90 20,78 10,50 20,22" fill="${color}" fill-opacity="0.12" stroke="${color}" stroke-width="2"/>`
+              : `<circle cx="50" cy="50" r="38" fill="${color}" fill-opacity="0.12" stroke="${color}" stroke-width="2" stroke-dasharray="6 3"/>`
+            }
+            ${isT
+              ? `<polygon points="50,20 76,66 24,66" fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="2"/>`
+              : `<circle cx="50" cy="40" r="16" fill="${color}" fill-opacity="0.22"/><circle cx="41" cy="56" r="16" fill="${color}" fill-opacity="0.22"/><circle cx="59" cy="56" r="16" fill="${color}" fill-opacity="0.22"/>`
+            }
+            <path d="M50 26 L55 45 L74 50 L55 55 L50 74 L45 55 L26 50 L45 45 Z" fill="${color}"/>
+            <circle cx="50" cy="50" r="5" fill="#ffffff"/>
+          </svg>
+        `;
+      }
+      if (testId === 'animal') {
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="${color}" stroke-width="2.5"/>
+            <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="${color}" fill-opacity="0.14" stroke="${color}" stroke-width="2"/>
+            <polygon points="50,24 68,44 50,76 32,44" fill="${color}"/>
+            <circle cx="42" cy="44" r="3" fill="#ffffff"/><circle cx="58" cy="44" r="3" fill="#ffffff"/>
+            <polygon points="46,56 54,56 50,62" fill="#ffffff"/>
+          </svg>
+        `;
+      }
+      if (testId === 'love') {
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="${color}" stroke-width="2.5"/>
+            <path d="M50 78 C20 58, 16 32, 34 24 C43 20, 50 28, 50 32 C50 28, 57 20, 66 24 C84 32, 80 58, 50 78 Z" fill="${color}" fill-opacity="0.22" stroke="${color}" stroke-width="2.5"/>
+            <polygon points="50,32 36,44 50,74 64,44" fill="${color}"/>
+            <circle cx="50" cy="46" r="4" fill="#ffffff"/>
+          </svg>
+        `;
+      }
+      if (testId === 'archetype') {
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="${color}" stroke-width="2.5"/>
+            <circle cx="50" cy="50" r="34" fill="none" stroke="${color}" stroke-width="1.8" stroke-dasharray="5 3"/>
+            <polygon points="50,16 79,66 21,66" fill="${color}" fill-opacity="0.2" stroke="${color}" stroke-width="2"/>
+            <polygon points="50,84 79,34 21,34" fill="none" stroke="${color}" stroke-width="2"/>
+            <circle cx="50" cy="50" r="8" fill="${color}"/>
+          </svg>
+        `;
+      }
+      return `
+        <svg width="${size}" height="${size}" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="${color}" stroke-width="2.5"/>
+          <path d="M50,12 A38,38 0 0,1 50,88 A19,19 0 0,1 50,50 A19,19 0 0,0 50,12 Z" fill="${color}"/>
+          <circle cx="50" cy="31" r="6" fill="#ffffff"/><circle cx="50" cy="69" r="6" fill="${color}"/>
+        </svg>
+      `;
+    }
+
+    function render6AxisHexRadarSVG(axes, primaryColor) {
+      const cx = 180, cy = 165, maxR = 100;
+      const getPt = (i, ratio) => {
+        const ang = (-90 + i * 60) * (Math.PI / 180);
+        return { x: +(cx + maxR * ratio * Math.cos(ang)).toFixed(1), y: +(cy + maxR * ratio * Math.sin(ang)).toFixed(1) };
+      };
+      const grids = [0.25, 0.5, 0.75, 1].map(lvl => {
+        const pts = axes.map((_, i) => { const p = getPt(i, lvl); return `${p.x},${p.y}`; }).join(' ');
+        return `<polygon points="${pts}" fill="${lvl === 1 ? '#f8fafc' : 'none'}" stroke="#cbd5e1" stroke-width="1.2" ${lvl === 0.5 ? 'stroke-dasharray="3 3"' : ''}/>`;
+      }).join('');
+      const lines = axes.map((_, i) => { const p = getPt(i, 1); return `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#cbd5e1" stroke-width="1"/>`; }).join('');
+      const dataPts = axes.map((ax, i) => getPt(i, ax.val / 100));
+      const polyStr = dataPts.map(p => `${p.x},${p.y}`).join(' ');
+      const dots = dataPts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="5" fill="#ffffff" stroke="${primaryColor}" stroke-width="2.5"/>`).join('');
+      const labels = axes.map((ax, i) => {
+        const p = getPt(i, 1.28);
+        let anchor = 'middle';
+        if (i === 1 || i === 2) anchor = 'start';
+        if (i === 4 || i === 5) anchor = 'end';
+        const dy = i === 0 ? -4 : (i === 3 ? 6 : 0);
+        return `
+          <text x="${p.x}" y="${p.y + dy}" text-anchor="${anchor}" fill="#0f172a" font-size="12" font-weight="800">${ax.label} ${ax.val}%</text>
+          <text x="${p.x}" y="${p.y + dy + 14}" text-anchor="${anchor}" fill="#64748b" font-size="10.5" font-weight="600">${ax.sub}</text>
+        `;
+      }).join('');
+
+      return `
+        <svg viewBox="0 0 360 330" style="width:100%;max-width:350px;height:auto;display:block;margin:0 auto;overflow:visible;">
+          ${grids}${lines}
+          <polygon points="${polyStr}" fill="${primaryColor}" fill-opacity="0.25" stroke="${primaryColor}" stroke-width="2.5" stroke-linejoin="round"/>
+          ${dots}${labels}
+        </svg>
+      `;
+    }
+
+    function render4AxisRadarSVG(axes, primaryColor) {
+      const cx = 165, cy = 150, maxR = 92;
+      const dirs = [
+        { dx: 0, dy: -1, anchor: 'middle', dyTxt: -12 },
+        { dx: 1, dy: 0, anchor: 'start', dxTxt: 12 },
+        { dx: 0, dy: 1, anchor: 'middle', dyTxt: 18 },
+        { dx: -1, dy: 0, anchor: 'end', dxTxt: -12 }
+      ];
+      const grids = [0.25, 0.5, 0.75, 1].map(lvl => {
+        const pts = dirs.map(d => `${cx + d.dx * maxR * lvl},${cy + d.dy * maxR * lvl}`).join(' ');
+        return `<polygon points="${pts}" fill="${lvl === 1 ? '#f8fafc' : 'none'}" stroke="#cbd5e1" stroke-width="1.2" ${lvl === 0.5 ? 'stroke-dasharray="3 3"' : ''}/>`;
+      }).join('');
+      const lines = dirs.map(d => `<line x1="${cx}" y1="${cy}" x2="${cx + d.dx * maxR}" y2="${cy + d.dy * maxR}" stroke="#cbd5e1" stroke-width="1"/>`).join('');
+      const ptsArr = axes.map((ax, i) => ({ x: cx + dirs[i].dx * (ax.val / 100) * maxR, y: cy + dirs[i].dy * (ax.val / 100) * maxR }));
+      const polyPts = ptsArr.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+      const dots = ptsArr.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="#ffffff" stroke="${primaryColor}" stroke-width="2.5"/>`).join('');
+      const texts = axes.map((ax, i) => {
+        const d = dirs[i];
+        const lx = cx + d.dx * maxR + (d.dxTxt || 0);
+        const ly = cy + d.dy * maxR + (d.dyTxt || 0);
+        return `
+          <text x="${lx}" y="${ly}" text-anchor="${d.anchor}" fill="#0f172a" font-size="12" font-weight="800">${ax.label} ${ax.val}%</text>
+          <text x="${lx}" y="${ly + 14}" text-anchor="${d.anchor}" fill="#64748b" font-size="10.5" font-weight="600">${ax.sub}</text>
+        `;
+      }).join('');
+
+      return `
+        <svg viewBox="0 0 330 305" style="width:100%;max-width:330px;height:auto;display:block;margin:0 auto;overflow:visible;">
+          ${grids}${lines}
+          <polygon points="${polyPts}" fill="${primaryColor}" fill-opacity="0.24" stroke="${primaryColor}" stroke-width="2.5" stroke-linejoin="round"/>
+          ${dots}${texts}
+        </svg>
+      `;
+    }
+
+    function render12SpokeRadarSVG(scoresMap) {
+      const cx = 195, cy = 185, maxR = 110;
+      const count = JUNG_ARCHETYPES.length;
+      const rings = [0.33, 0.66, 1].map(lvl => {
+        const pts = JUNG_ARCHETYPES.map((_, i) => {
+          const ang = (-90 + i * (360 / count)) * (Math.PI / 180);
+          return `${(cx + maxR * lvl * Math.cos(ang)).toFixed(1)},${(cy + maxR * lvl * Math.sin(ang)).toFixed(1)}`;
+        }).join(' ');
+        return `<polygon points="${pts}" fill="${lvl === 1 ? '#f8fafc' : 'none'}" stroke="#cbd5e1" stroke-width="1"/>`;
+      }).join('');
+      const spokes = JUNG_ARCHETYPES.map((_, i) => {
+        const ang = (-90 + i * (360 / count)) * (Math.PI / 180);
+        return `<line x1="${cx}" y1="${cy}" x2="${(cx + maxR * Math.cos(ang)).toFixed(1)}" y2="${(cy + maxR * Math.sin(ang)).toFixed(1)}" stroke="#e2e8f0" stroke-width="1"/>`;
+      }).join('');
+      const dataPts = JUNG_ARCHETYPES.map((arch, i) => {
+        const val = scoresMap[arch.code] || 50;
+        const r = (val / 100) * maxR;
+        const ang = (-90 + i * (360 / count)) * (Math.PI / 180);
+        return { x: cx + r * Math.cos(ang), y: cy + r * Math.sin(ang) };
+      });
+      const polyStr = dataPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+      const dots = dataPts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="#ffffff" stroke="#7B3F9E" stroke-width="2"/>`).join('');
+      const labels = JUNG_ARCHETYPES.map((arch, i) => {
+        const ang = (-90 + i * (360 / count)) * (Math.PI / 180);
+        const lx = cx + (maxR + 26) * Math.cos(ang);
+        const ly = cy + (maxR + 26) * Math.sin(ang);
+        const qColor = ARCHETYPE_QUADRANTS[arch.quad].color;
+        let anchor = 'middle';
+        if (Math.cos(ang) > 0.25) anchor = 'start';
+        if (Math.cos(ang) < -0.25) anchor = 'end';
+        const val = scoresMap[arch.code] || 50;
+        return `
+          <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" fill="${qColor}" font-size="11" font-weight="800">${arch.name}</text>
+          <text x="${lx.toFixed(1)}" y="${(ly + 12).toFixed(1)}" text-anchor="${anchor}" fill="#64748b" font-size="9.5" font-weight="600">${val}%</text>
+        `;
+      }).join('');
+
+      return `
+        <svg viewBox="0 0 390 370" style="width:100%;max-width:390px;height:auto;display:block;margin:0 auto;overflow:visible;">
+          ${rings}${spokes}
+          <polygon points="${polyStr}" fill="#7B3F9E" fill-opacity="0.24" stroke="#7B3F9E" stroke-width="2.4" stroke-linejoin="round"/>
+          ${dots}${labels}
+        </svg>
+      `;
+    }
+
+    function renderContrastGaugeSVG(pct) {
+      const r = 46;
+      const circ = 2 * Math.PI * r;
+      const offset = circ * (1 - pct / 100);
+      return `
+        <svg width="124" height="124" viewBox="0 0 120 120" style="display:block;margin:0 auto;">
+          <circle cx="60" cy="60" r="${r}" fill="none" stroke="#dbeafe" stroke-width="10"/>
+          <circle cx="60" cy="60" r="${r}" fill="none" stroke="#2563EB" stroke-width="10"
+            stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 60 60)"/>
+          <text x="60" y="57" text-anchor="middle" fill="#0f172a" font-size="22" font-weight="900">${pct}%</text>
+          <text x="60" y="74" text-anchor="middle" fill="#2563EB" font-size="10" font-weight="800">反差指数</text>
+        </svg>
+      `;
+    }
+
+    /**
+     * ============================================================================
+     * 五、五大测评题库构建与核心计分引擎
+     * ============================================================================
+     */
+    function buildMBTI64Questions(mode) {
+      const dims = ['EI', 'SN', 'TF', 'JP', 'AO', 'HC'];
+      const perDim = mode === 'quick' ? 4 : 8;
+      const grouped = {};
+      dims.forEach(d => { grouped[d] = MBTI64_QUESTIONS.filter(q => q.dim === d).slice(0, perDim); });
+      const list = [];
+      for (let i = 0; i < perDim; i++) {
+        for (let d of dims) {
+          if (grouped[d][i]) list.push(grouped[d][i]);
+        }
+      }
+      return list;
+    }
+
+    function startIntro(testId) {
+      state.activeTest = testId;
+      state.stage = 'intro';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    function beginQuiz(testId, customMbtiMode = null) {
+      state.activeTest = testId;
+      if (testId === 'mbti64') {
+        if (customMbtiMode) state.mbtiMode = customMbtiMode;
+        state.questions = buildMBTI64Questions(state.mbtiMode);
+      } else if (testId === 'animal') {
+        state.questions = [...ANIMAL_QUESTIONS];
+      } else if (testId === 'love') {
+        state.questions = [...LOVE_QUESTIONS];
+      } else if (testId === 'archetype') {
+        state.questions = [...ARCHETYPE_QUESTIONS];
+      } else if (testId === 'duality') {
+        state.questions = [...DUALITY_QUESTIONS];
+      }
+
+      state.qIndex = 0;
+      state.answers = {};
+      state.stage = 'quiz';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    function handleAnswer(val) {
+      const q = state.questions[state.qIndex];
+      if (!q) return;
+      state.answers[q.id] = val;
+      render();
+
+      setTimeout(() => {
+        if (state.qIndex < state.questions.length - 1) {
+          state.qIndex++;
+          render();
+        } else {
+          computeAndShowResult();
+        }
+      }, 210);
+    }
+
+    function prevStep() {
+      if (state.qIndex > 0) {
+        state.qIndex--;
+        render();
+      }
+    }
+
+    function runRandomDemo(testId = null, customMbtiMode = null) {
+      if (testId) {
+        state.activeTest = testId;
+        if (testId === 'mbti64') {
+          if (customMbtiMode) state.mbtiMode = customMbtiMode;
+          state.questions = buildMBTI64Questions(state.mbtiMode);
+        } else if (testId === 'animal') state.questions = [...ANIMAL_QUESTIONS];
+        else if (testId === 'love') state.questions = [...LOVE_QUESTIONS];
+        else if (testId === 'archetype') state.questions = [...ARCHETYPE_QUESTIONS];
+        else if (testId === 'duality') state.questions = [...DUALITY_QUESTIONS];
+      }
+
+      const t = state.activeTest;
+      state.answers = {};
+
+      if (t === 'mbti64') {
+        const dims = ['EI', 'SN', 'TF', 'JP', 'AO', 'HC'];
+        const bias = {};
+        dims.forEach(d => { bias[d] = Math.random() > 0.5 ? 1.5 : -1.5; });
+        state.questions.forEach(q => {
+          const raw = bias[q.dim] * q.dir + (Math.random() * 2.4 - 1.2);
+          state.answers[q.id] = Math.max(-3, Math.min(3, Math.round(raw)));
+        });
+      } else if (t === 'animal' || t === 'love') {
+        const dims = t === 'animal' ? ['DOM', 'SOC', 'AGI', 'WIS'] : ['AI', 'RP', 'FS', 'DM'];
+        const bias = {};
+        dims.forEach(d => { bias[d] = Math.random() > 0.5 ? 1.6 : -1.6; });
+        state.questions.forEach(q => {
+          const raw = bias[q.dim] * q.dir + (Math.random() * 2.4 - 1.2);
+          state.answers[q.id] = Math.max(-3, Math.min(3, Math.round(raw)));
+        });
+      } else if (t === 'archetype') {
+        const codes = JUNG_ARCHETYPES.map(a => a.code);
+        const top1 = codes[Math.floor(Math.random() * codes.length)];
+        const top2 = codes[(codes.indexOf(top1) + 4) % codes.length];
+        const low1 = codes[(codes.indexOf(top1) + 7) % codes.length];
+        state.questions.forEach(q => {
+          let base = Math.round(Math.random() * 4 - 2);
+          if (q.arch === top1) base = 3;
+          else if (q.arch === top2) base = 2;
+          else if (q.arch === low1) base = -3;
+          state.answers[q.id] = base;
+        });
+      } else if (t === 'duality') {
+        const sBias = { EI: Math.random() > 0.5 ? 1.8 : -1.8, SN: Math.random() > 0.5 ? 1.8 : -1.8, TF: Math.random() > 0.5 ? 1.8 : -1.8, JP: Math.random() > 0.5 ? 1.8 : -1.8 };
+        const hBias = { EI: -sBias.EI * 0.85, SN: sBias.SN * 0.7, TF: -sBias.TF * 0.9, JP: -sBias.JP * 0.85 };
+        state.questions.forEach(q => {
+          const b = q.layer === 'day' ? sBias[q.dim] : hBias[q.dim];
+          const raw = b * q.dir + (Math.random() * 1.8 - 0.9);
+          state.answers[q.id] = Math.max(-3, Math.min(3, Math.round(raw)));
+        });
+      }
+
+      showToast('⚡ 已随机填充作答并生成深度报告！');
+      setTimeout(() => computeAndShowResult(), 200);
+    }
+
+    function computeAndShowResult() {
+      const t = state.activeTest;
+      const meta = TEST_META[t];
+      const timestamp = new Date().toLocaleString('zh-CN', { hour12: false });
+      let resObj = null;
+
+      if (t === 'mbti64') {
+        const dimCfg = [
+          { key: 'EI', l: 'E', r: 'I', lName: '外向 (E)', rName: '内向 (I)', label: '能量来源' },
+          { key: 'SN', l: 'S', r: 'N', lName: '实感 (S)', rName: '直觉 (N)', label: '认知方式' },
+          { key: 'TF', l: 'T', r: 'F', lName: '理智 (T)', rName: '情感 (F)', label: '决策模式' },
+          { key: 'JP', l: 'J', r: 'P', lName: '计划 (J)', rName: '随性 (P)', label: '生活方式' },
+          { key: 'AO', l: 'A', r: 'O', lName: '果断 (A)', rName: '纠结 (O)', label: '行为表现' },
+          { key: 'HC', l: 'H', r: 'C', lName: '温暖 (H)', rName: '高冷 (C)', label: '待人态度' }
+        ];
+        const dimensions = {};
+        let baseCode = '';
+        let aoWin = 'A', hcWin = 'H';
+
+        dimCfg.forEach((cfg, idx) => {
+          const qs = state.questions.filter(q => q.dim === cfg.key);
+          const maxAbs = (qs.length || 4) * 3;
+          let sum = 0;
+          qs.forEach(q => { sum += (state.answers[q.id] || 0) * q.dir; });
+          let leftPct = Math.round(((sum + maxAbs) / (2 * maxAbs)) * 100);
+          if (leftPct === 50) leftPct = sum >= 0 ? 52 : 48;
+          leftPct = Math.max(6, Math.min(95, leftPct));
+          const rightPct = 100 - leftPct;
+          const winner = leftPct >= 50 ? cfg.l : cfg.r;
+          const winnerPct = Math.max(leftPct, rightPct);
+
+          if (idx < 4) baseCode += winner;
+          else if (idx === 4) aoWin = winner;
+          else if (idx === 5) hcWin = winner;
+
+          dimensions[cfg.key] = { ...cfg, leftPct, rightPct, winner, winnerPct };
+        });
+
+        const subKey = `${aoWin}-${hcWin}`;
+        const fullCode = `${baseCode}-${subKey}`;
+        const baseInfo = MBTI_16_TYPES[baseCode];
+        const subInfo = MBTI_SUBTYPES[subKey];
+        const tempInfo = TEMPERAMENTS[baseInfo.temp];
+        const fullTitle = `${subInfo.label}${baseInfo.name}`;
+
+        resObj = {
+          id: 'res_' + Date.now(),
+          testId: 'mbti64',
+          testName: meta.cnName,
+          enTitle: meta.enTitle,
+          modeLabel: state.mbtiMode === 'quick' ? '24题快速版' : '48题专业版',
+          timestamp,
+          fullCode,
+          baseCode,
+          subKey,
+          fullTitle,
+          headline: `${fullCode} · ${fullTitle}`,
+          subHeadline: `${tempInfo.name} · ${subInfo.tag}`,
+          tempInfo,
+          baseInfo,
+          subInfo,
+          dimensions
+        };
+      } else if (t === 'animal') {
+        const scores = {};
+        ANIMAL_DIMENSIONS.forEach(d => {
+          const qs = state.questions.filter(q => q.dim === d.key);
+          const maxAbs = qs.length * 3;
+          let sum = 0;
+          qs.forEach(q => { sum += (state.answers[q.id] || 0) * q.dir; });
+          let pct = Math.round(((sum + maxAbs) / (2 * maxAbs)) * 100);
+          scores[d.key] = Math.max(8, Math.min(96, pct));
+        });
+
+        const userVec = [scores.DOM, scores.SOC, scores.AGI, scores.WIS];
+        const ranked = Object.values(ANIMAL_ARCHETYPES).map(anim => {
+          const dist = Math.sqrt(anim.vector.reduce((acc, v, i) => acc + Math.pow(v - userVec[i], 2), 0));
+          const matchPct = Math.max(60, Math.min(98, Math.round(100 - dist * 0.44)));
+          return { ...anim, dist, matchPct };
+        }).sort((a, b) => a.dist - b.dist);
+
+        const primary = ranked[0];
+        const secondary = ranked[1];
+
+        resObj = {
+          id: 'res_' + Date.now(),
+          testId: 'animal',
+          testName: meta.cnName,
+          enTitle: meta.enTitle,
+          timestamp,
+          headline: `${primary.name} · ${primary.title}`,
+          subHeadline: `契合度 ${primary.matchPct}% · 潜藏影子动物：${secondary.name} (${secondary.title})`,
+          primary,
+          secondary,
+          scores
+        };
+      } else if (t === 'love') {
+        const dims = {};
+        let code = '';
+        LOVE_DIMENSIONS.forEach(d => {
+          const qs = state.questions.filter(q => q.dim === d.key);
+          const maxAbs = qs.length * 3;
+          let sum = 0;
+          qs.forEach(q => { sum += (state.answers[q.id] || 0) * q.dir; });
+          let leftPct = Math.round(((sum + maxAbs) / (2 * maxAbs)) * 100);
+          if (leftPct === 50) leftPct = sum >= 0 ? 52 : 48;
+          leftPct = Math.max(8, Math.min(94, leftPct));
+          const rightPct = 100 - leftPct;
+          const win = leftPct >= 50 ? d.lCode : d.rCode;
+          code += win;
+          dims[d.key] = { ...d, leftPct, rightPct, win, winPct: Math.max(leftPct, rightPct) };
+        });
+
+        const profile = LOVE_TYPES[code];
+        resObj = {
+          id: 'res_' + Date.now(),
+          testId: 'love',
+          testName: meta.cnName,
+          enTitle: meta.enTitle,
+          timestamp,
+          code,
+          headline: `${code} · ${profile.name}`,
+          subHeadline: `${profile.en} · 灵魂伴侣：${profile.match} (${LOVE_TYPES[profile.match].name})`,
+          profile,
+          dims
+        };
+      } else if (t === 'archetype') {
+        const scoresMap = {};
+        JUNG_ARCHETYPES.forEach(arch => {
+          const qs = state.questions.filter(q => q.arch === arch.code);
+          const maxAbs = qs.length * 3;
+          let sum = 0;
+          qs.forEach(q => { sum += (state.answers[q.id] || 0); });
+          const jitter = (arch.code.charCodeAt(0) % 5) - 2;
+          let pct = Math.round(((sum + maxAbs) / (2 * maxAbs)) * 100) + jitter;
+          scoresMap[arch.code] = Math.max(15, Math.min(96, pct));
+        });
+
+        const sorted = [...JUNG_ARCHETYPES].map(a => ({ ...a, score: scoresMap[a.code] })).sort((a, b) => b.score - a.score);
+        const primary = sorted[0];
+        const wing = sorted[1];
+        const shadow = sorted[sorted.length - 1];
+
+        resObj = {
+          id: 'res_' + Date.now(),
+          testId: 'archetype',
+          testName: meta.cnName,
+          enTitle: meta.enTitle,
+          timestamp,
+          headline: `${primary.name} (${primary.en})`,
+          subHeadline: `辅助翼型：${wing.name} (${wing.score}%) · 阴影原型：${shadow.name}`,
+          primary,
+          wing,
+          shadow,
+          scoresMap,
+          sorted
+        };
+      } else if (t === 'duality') {
+        const calcLayer = (layerName) => {
+          const axisList = [
+            { key: 'EI', l: 'E', r: 'I', lName: '外向 E', rName: '内向 I' },
+            { key: 'SN', l: 'S', r: 'N', lName: '实感 S', rName: '直觉 N' },
+            { key: 'TF', l: 'T', r: 'F', lName: '理智 T', rName: '情感 F' },
+            { key: 'JP', l: 'J', r: 'P', lName: '计划 J', rName: '随性 P' }
+          ];
+          const resAxes = {};
+          let code = '';
+          axisList.forEach(ax => {
+            const qs = state.questions.filter(q => q.layer === layerName && q.dim === ax.key);
+            const maxAbs = qs.length * 3;
+            let sum = 0;
+            qs.forEach(q => { sum += (state.answers[q.id] || 0) * q.dir; });
+            let lPct = Math.round(((sum + maxAbs) / (2 * maxAbs)) * 100);
+            if (lPct === 50) lPct = sum >= 0 ? 53 : 47;
+            lPct = Math.max(10, Math.min(92, lPct));
+            const rPct = 100 - lPct;
+            const win = lPct >= 50 ? ax.l : ax.r;
+            code += win;
+            resAxes[ax.key] = { ...ax, lPct, rPct, win };
+          });
+          return { code, axes: resAxes, meta: MBTI_16_TYPES[code] };
+        };
+
+        const day = calcLayer('day');
+        const night = calcLayer('night');
+        const diffs = ['EI', 'SN', 'TF', 'JP'].map(k => Math.abs(day.axes[k].lPct - night.axes[k].lPct));
+        const avgDiff = diffs.reduce((a, b) => a + b, 0) / 4;
+        const contrastIndex = Math.max(16, Math.min(96, Math.round(avgDiff * 1.35)));
+        let contrastLabel = '表里如一 · 高度自洽型';
+        if (contrastIndex >= 72) contrastLabel = '极致反转 · 昼夜镜像灵魂';
+        else if (contrastIndex >= 48) contrastLabel = '双面魅影 · 鲜明反差切换';
+        else if (contrastIndex >= 30) contrastLabel = '温润调适 · 弹性社交面具';
+
+        resObj = {
+          id: 'res_' + Date.now(),
+          testId: 'duality',
+          testName: meta.cnName,
+          enTitle: meta.enTitle,
+          timestamp,
+          headline: `白昼 ${day.code} × 深夜 ${night.code}`,
+          subHeadline: `昼夜反差指数：${contrastIndex}% (${contrastLabel})`,
+          day,
+          night,
+          contrastIndex,
+          contrastLabel
+        };
+      }
+
+      state.result = resObj;
+      state.dualityViewMode = 'both';
+      saveHistory(resObj);
+      state.stage = 'result';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    /**
+     * ============================================================================
+     * 六、主视图渲染调度器
+     * ============================================================================
+     */
+    function render() {
+      const root = document.getElementById('app-root');
+      if (!root) return;
+
+      if (state.tab === 'atlas') {
+        root.innerHTML = renderAtlasView();
+        return;
+      }
+      if (state.tab === 'profile') {
+        root.innerHTML = renderProfileAndHistoryView();
+        return;
+      }
+
+      if (state.stage === 'portal') root.innerHTML = renderPortalView();
+      else if (state.stage === 'intro') root.innerHTML = renderIntroView();
+      else if (state.stage === 'quiz') root.innerHTML = renderQuizView();
+      else if (state.stage === 'result') root.innerHTML = renderResultView();
+    }
+
+    // ----------------------------------------------------------------------------
+    // 视图 A：测评大厅 (5大低多边形粉彩宽幅卡片)
+    // ----------------------------------------------------------------------------
+    function renderPortalView() {
+      const order = ['mbti64', 'animal', 'love', 'archetype', 'duality'];
+      return `
+        <div class="animate-enter">
+          <div class="portal-header">
+            <div class="portal-pill">
+              <span>✦</span>
+              <span>64PERSONALITY · 五维合一深度心理测评实验室</span>
+            </div>
+            <h1 class="portal-h1">探索你灵魂深处的全维光谱</h1>
+            <p class="portal-desc">融合 MBTI-64 六维人格、动物原型本能、16型恋爱编码、荣格十二原型与昼夜双面人格五大测评系统</p>
+          </div>
+
+          <div class="banner-stack">
+            ${order.map(id => {
+              const m = TEST_META[id];
+              return `
+                <article class="test-banner" onclick="startIntro('${id}')" style="cursor:pointer;">
+                  ${getLowPolyBgSVG(id)}
+                  <div class="banner-content">
+                    <div class="banner-badge-row">
+                      <span class="banner-cn-tag" style="color:${m.dark};">${m.cnName}</span>
+                      <span class="banner-q-tag">· ${m.countText}</span>
+                    </div>
+                    <h2 class="banner-title" style="color:${m.primary};">${m.enTitle}</h2>
+                    <p class="banner-sub-en">${m.enSub}</p>
+                    <div class="banner-btn-group">
+                      <button class="banner-cta" style="background:${m.primary};" onclick="event.stopPropagation(); startIntro('${id}')">
+                        <span>开始测试</span>
+                      </button>
+                      <button class="banner-demo-btn" onclick="event.stopPropagation(); runRandomDemo('${id}', 'quick')">
+                        <span>⚡ 一键随机演示</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="banner-art">
+                    ${getBannerArtworkSVG(id)}
+                  </div>
+                </article>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ----------------------------------------------------------------------------
+    // 视图 B：测评介绍页 (支持 MBTI-64 24题/48题模式选择)
+    // ----------------------------------------------------------------------------
+    function renderIntroView() {
+      const m = TEST_META[state.activeTest];
+      if (!m) { state.stage = 'portal'; return renderPortalView(); }
+
+      const isMbti64 = m.id === 'mbti64';
+
+      return `
+        <div class="animate-enter" style="max-width:780px; margin:0 auto;">
+          <div style="margin-bottom:16px;">
+            <button class="btn-ghost" onclick="state.stage='portal'; render();">← 返回测评大厅</button>
+          </div>
+
+          <div class="card" style="position:relative; overflow:hidden; padding:0;">
+            <div style="position:relative; padding:28px 24px; border-bottom:1px solid ${m.border}; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
+              ${getLowPolyBgSVG(m.id)}
+              <div style="position:relative; z-index:2; flex:1; min-width:240px;">
+                <span style="display:inline-block; padding:4px 12px; border-radius:999px; background:#ffffff; color:${m.primary}; font-size:12px; font-weight:800; margin-bottom:8px;">
+                  ${m.cnName} · ${m.countText} · ${m.duration}
+                </span>
+                <h1 style="font-size:28px; font-weight:900; color:${m.primary}; line-height:1.2;">${m.enTitle}</h1>
+                <p style="font-size:14px; color:#334155; font-weight:600; margin-top:4px;">${m.enSub}</p>
+              </div>
+              <div style="position:relative; z-index:2; width:165px;">
+                ${getBannerArtworkSVG(m.id)}
+              </div>
+            </div>
+
+            <div style="padding:26px 24px 30px;">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px; color:#0f172a;">测评模型说明</h3>
+              <p style="font-size:14px; color:#475569; line-height:1.75; margin-bottom:22px;">
+                ${m.introDesc}
+              </p>
+
+              ${isMbti64 ? `
+                <div class="grid-2" style="margin-bottom:22px;">
+                  <div style="padding:18px; border-radius:18px; background:#f8fafc; border:1.5px solid #cbd5e1;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:#059669; margin-bottom:6px;">
+                      <span>⚡ 快速探索版</span>
+                      <span>24 题 · 约 3 分钟</span>
+                    </div>
+                    <div style="font-size:16px; font-weight:900; color:#0f172a; margin-bottom:6px;">6 维精选情景测试</div>
+                    <p style="font-size:12.5px; color:#64748b; margin-bottom:14px;">每维度精选 4 道高区分度题目，快速生成你的 6 字母编码与六维雷达图。</p>
+                    <button class="btn-primary" style="width:100%; background:#059669;" onclick="beginQuiz('mbti64', 'quick')">开始 24 题快速版 →</button>
+                  </div>
+
+                  <div style="padding:18px; border-radius:18px; background:#eaf5fc; border:1.5px solid #3498DB;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:#1d6fa5; margin-bottom:6px;">
+                      <span>💎 深度专业版 (推荐)</span>
+                      <span>48 题 · 约 6 分钟</span>
+                    </div>
+                    <div style="font-size:16px; font-weight:900; color:#0f172a; margin-bottom:6px;">6 维正反向全量校准</div>
+                    <p style="font-size:12.5px; color:#475569; margin-bottom:14px;">完整 48 题双向校准算法，精准捕捉 A/O 果断纠结与 H/C 温暖高冷亚型。</p>
+                    <button class="btn-primary" style="width:100%; background:#3498DB;" onclick="beginQuiz('mbti64', 'pro')">开始 48 题专业版 →</button>
+                  </div>
+                </div>
+
+                <div style="text-align:center;">
+                  <button class="btn-secondary" onclick="runRandomDemo('mbti64', 'pro')">
+                    <span>⚡ 一键随机演示（立即生成 MBTI-64 深度报告）</span>
+                  </button>
+                </div>
+              ` : `
+                <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                  <button class="btn-primary" style="background:${m.primary};" onclick="beginQuiz('${m.id}')">
+                    <span>开始完整测评 (${m.countText}) →</span>
+                  </button>
+                  <button class="btn-secondary" onclick="runRandomDemo('${m.id}')">
+                    <span>⚡ 一键随机演示</span>
+                  </button>
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ----------------------------------------------------------------------------
+    // 视图 C：7级李克特量表沉浸答题页（顶部集成“⚡ 一键随机填充并生成报告”）
+    // ----------------------------------------------------------------------------
+    function renderQuizView() {
+      const m = TEST_META[state.activeTest];
+      const total = state.questions.length;
+      const idx = state.qIndex;
+      const q = state.questions[idx];
+      const pct = Math.round(((idx + 1) / total) * 100);
+      const selected = state.answers[q.id];
+
+      const dots = [
+        { val: 3, cls: 'dot-lg', color: '#10b981', label: '非常同意' },
+        { val: 2, cls: 'dot-md', color: '#34d399', label: '比较同意' },
+        { val: 1, cls: 'dot-sm', color: '#6ee7b7', label: '略微同意' },
+        { val: 0, cls: 'dot-xs', color: '#94a3b8', label: '中立' },
+        { val: -1, cls: 'dot-sm', color: '#a5b4fc', label: '略微不同意' },
+        { val: -2, cls: 'dot-md', color: '#818cf8', label: '比较不同意' },
+        { val: -3, cls: 'dot-lg', color: '#4f46e5', label: '非常不同意' }
+      ];
+
+      return `
+        <div class="animate-enter" style="max-width:760px; margin:0 auto;">
+          <!-- 顶部进度与一键随机填充栏 -->
+          <div class="card" style="padding:16px 20px; margin-bottom:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:900; color:${m.primary};">${m.cnName}</span>
+                <span style="font-weight:800; color:#0f172a;">第 <span style="color:${m.primary};">${idx + 1}</span> / ${total} 题 (${pct}%)</span>
+              </div>
+              <button class="btn-ghost" style="padding:5px 12px; font-size:12px; color:#4f46e5; border-color:#c7d2fe; background:#eef2ff;" onclick="runRandomDemo()">
+                <span>⚡ 一键随机填充并生成报告</span>
+              </button>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:${pct}%; background:linear-gradient(90deg, #10b981 0%, ${m.primary} 100%);"></div>
+            </div>
+          </div>
+
+          <!-- 题目主卡片 -->
+          <div class="card" style="min-height:330px; display:flex; flex-direction:column; justify-content:space-between; text-align:center;">
+            <div style="padding-top:12px;">
+              <div style="font-size:11px; font-weight:800; letter-spacing:0.12em; color:#94a3b8; margin-bottom:12px;">
+                QUESTION ${String(idx + 1).padStart(2, '0')}
+              </div>
+              <h2 style="font-size:19px; font-weight:800; color:#0f172a; line-height:1.55; max-width:580px; margin:0 auto;">
+                “${q.text}”
+              </h2>
+            </div>
+
+            <div style="margin:28px 0;">
+              <div class="likert-row">
+                ${dots.map(d => {
+                  const active = selected === d.val;
+                  return `
+                    <button
+                      class="likert-dot ${d.cls}"
+                      title="${d.label}"
+                      aria-label="${d.label}"
+                      onclick="handleAnswer(${d.val})"
+                      style="border-color:${d.color}; background:${active ? d.color : '#ffffff'}; ${active ? 'transform:scale(1.14); box-shadow:0 0 0 4px rgba(79,70,229,0.16);' : ''}"
+                    >
+                      ${active ? '<span style="color:#fff;font-size:14px;font-weight:900;">✓</span>' : ''}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+              <div class="likert-labels">
+                <span style="color:#059669;">非常同意</span>
+                <span style="color:#94a3b8; font-size:12px;">中立</span>
+                <span style="color:#4f46e5;">非常不同意</span>
+              </div>
+            </div>
+
+            <div style="padding-top:14px; border-top:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+              <button class="btn-ghost" onclick="prevStep()" ${idx === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>
+                ← 上一题
+              </button>
+              <span style="font-size:12px; color:#94a3b8;">点击圆圈自动跳转下一题</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ----------------------------------------------------------------------------
+    // 视图 D：五大测评深度可视化报告渲染
+    // ----------------------------------------------------------------------------
+    function renderResultView() {
+      const r = state.result;
+      if (!r) { state.stage = 'portal'; return renderPortalView(); }
+      const m = TEST_META[r.testId];
+      let bodyHTML = '';
+
+      if (r.testId === 'mbti64') {
+        const { fullCode, fullTitle, tempInfo, baseInfo, subInfo, dimensions, modeLabel } = r;
+        const dimOrder = ['EI', 'SN', 'TF', 'JP', 'AO', 'HC'];
+        const hexAxes = dimOrder.map(k => ({
+          label: `${dimensions[k].winner}`,
+          sub: dimensions[k].winner === dimensions[k].l ? dimensions[k].lName.slice(0, 2) : dimensions[k].rName.slice(0, 2),
+          val: dimensions[k].winnerPct
+        }));
+
+        bodyHTML = `
+          <div class="card" style="background:linear-gradient(135deg, ${tempInfo.softBg} 0%, #ffffff 100%); border-color:${tempInfo.border}; margin-bottom:20px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:22px;">
+              <div>${renderEmblemSVG('mbti64', r.baseCode, tempInfo.primary, 106)}</div>
+              <div style="flex:1; min-width:240px;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                  <span style="padding:4px 12px; border-radius:999px; background:#ffffff; color:${tempInfo.text}; border:1px solid ${tempInfo.border}; font-size:12px; font-weight:800;">
+                    ${tempInfo.name} · ${tempInfo.en}
+                  </span>
+                  <span style="padding:4px 12px; border-radius:999px; background:#ffffff; color:#334155; border:1px solid #e2e8f0; font-size:12px; font-weight:700;">
+                    ${subInfo.tag} · ${modeLabel || '专业版'}
+                  </span>
+                </div>
+                <h1 style="font-size:30px; font-weight:900; color:#0f172a;"><span style="color:${tempInfo.primary};">${fullCode}</span> · ${fullTitle}</h1>
+                <p style="font-size:14px; font-style:italic; color:#334155; margin-top:8px; background:rgba(255,255,255,0.85); padding:10px 14px; border-radius:12px;">
+                  “${baseInfo.motto}”
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">📊 六维人格倾向拔河光谱</h3>
+              <p style="font-size:12px; color:#64748b; margin-bottom:16px;">经典四维 + 第五维(A/O) + 第六维(H/C) 精确能量分布</p>
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                ${dimOrder.map(k => {
+                  const d = dimensions[k];
+                  const lWin = d.leftPct >= d.rightPct;
+                  const isExt = k === 'AO' || k === 'HC';
+                  return `
+                    <div>
+                      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                        <span style="color:${lWin ? tempInfo.primary : '#94a3b8'};">${d.lName} ${d.leftPct}%</span>
+                        <span style="font-size:11px; color:${isExt ? '#2563EB' : '#64748b'};">${d.label}${isExt ? ' · 拓展维' : ''}</span>
+                        <span style="color:${!lWin ? tempInfo.primary : '#94a3b8'};">${d.rightPct}% ${d.rName}</span>
+                      </div>
+                      <div class="spectrum-bar-bg">
+                        <div class="spectrum-seg-left" style="width:${d.leftPct}%; background:${lWin ? tempInfo.primary : '#cbd5e1'};"></div>
+                        <div class="spectrum-seg-right" style="width:${d.rightPct}%; background:${!lWin ? tempInfo.secondary : '#cbd5e1'};"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">🕸️ 六维特质分布六边形雷达</h3>
+              <p style="font-size:12px; color:#64748b; margin-bottom:8px;">主导特质张力与均衡度全景</p>
+              ${render6AxisHexRadarSVG(hexAxes, tempInfo.primary)}
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:8px;">⚡ 第五维行为表现 · ${subInfo.aoName} (${dimensions.AO.winnerPct}%)</h3>
+              <p style="font-size:13.5px; color:#334155; line-height:1.7; margin-bottom:12px;">${subInfo.aoAnalysis}</p>
+              <div style="padding:11px 14px; border-radius:12px; background:#eff6ff; color:#1e40af; font-size:12.5px;">
+                <strong>💡 行动进化建议：</strong>${subInfo.aoTip}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:8px;">🌿 第六维待人态度 · ${subInfo.hcName} (${dimensions.HC.winnerPct}%)</h3>
+              <p style="font-size:13.5px; color:#334155; line-height:1.7; margin-bottom:12px;">${subInfo.hcAnalysis}</p>
+              <div style="padding:11px 14px; border-radius:12px; background:#ecfdf5; color:#065f46; font-size:12.5px;">
+                <strong>🌱 关系边界建议：</strong>${subInfo.hcTip}
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px;">✦ 核心天赋与潜能</h3>
+              <p style="font-size:13px; color:#475569; line-height:1.65; margin-bottom:12px;">${baseInfo.summary}</p>
+              ${baseInfo.strengths.map(s => `<div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:6px;">✓ ${s}</div>`).join('')}
+              <div style="margin-top:12px; padding-top:10px; border-top:1px solid #f1f5f9;">
+                <div style="font-size:12px; font-weight:800; color:#64748b; margin-bottom:6px;">🚀 适配职业赛道：</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                  ${baseInfo.careers.map(c => `<span style="padding:4px 10px; border-radius:8px; background:#f1f5f9; font-size:12px; font-weight:600;">${c}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px;">◈ 潜在盲区与理想拍档</h3>
+              ${baseInfo.blindSpots.map(b => `<div style="font-size:13px; color:#475569; margin-bottom:8px;">• ${b}</div>`).join('')}
+              <div style="margin-top:14px; padding:14px; border-radius:14px; background:${tempInfo.softBg};">
+                <div style="font-size:12px; font-weight:800; color:${tempInfo.text}; margin-bottom:8px;">💫 最佳灵魂契合拍档（点击查看详情）：</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                  ${baseInfo.matches.map(mc => `
+                    <button class="btn-secondary" style="padding:6px 12px; font-size:12px; border-color:${tempInfo.border};" onclick="openAtlasDetail('mbti64', '${mc}')">
+                      ${mc}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (r.testId === 'animal') {
+        const { primary, secondary, scores } = r;
+        const radarAxes = [
+          { label: '领地领导力', sub: 'Dominance', val: scores.DOM },
+          { label: '群居共情力', sub: 'Social', val: scores.SOC },
+          { label: '敏捷变通度', sub: 'Agility', val: scores.AGI },
+          { label: '沉思洞察力', sub: 'Wisdom', val: scores.WIS }
+        ];
+        bodyHTML = `
+          <div class="card" style="background:linear-gradient(135deg, ${m.softBg} 0%, #ffffff 100%); border-color:${m.border}; margin-bottom:20px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:22px;">
+              <div>${renderEmblemSVG('animal', primary.code, primary.color, 102)}</div>
+              <div style="flex:1; min-width:240px;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                  <span style="padding:4px 12px; border-radius:999px; background:${primary.bg}; color:${primary.color}; font-size:12px; font-weight:800;">
+                    主导动物原型 · 契合度 ${primary.matchPct}%
+                  </span>
+                  <span style="padding:4px 12px; border-radius:999px; background:#ffffff; color:#475569; font-size:12px; font-weight:700; border:1px solid #e2e8f0;">
+                    潜藏影子动物：${secondary.name} (${secondary.title})
+                  </span>
+                </div>
+                <h1 style="font-size:30px; font-weight:900; color:#0f172a;">${primary.name} · <span style="color:${primary.color};">${primary.title}</span></h1>
+                <p style="font-size:14px; font-style:italic; color:#334155; margin-top:8px; background:rgba(255,255,255,0.85); padding:10px 14px; border-radius:12px;">
+                  “${primary.motto}”
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">🧭 四大原始本能维度光谱</h3>
+              <p style="font-size:12px; color:#64748b; margin-bottom:16px;">领地领导力、群居共情力、敏捷变通度与沉思洞察力得分</p>
+              <div style="display:flex; flex-direction:column; gap:15px;">
+                ${ANIMAL_DIMENSIONS.map(d => {
+                  const val = scores[d.key];
+                  return `
+                    <div>
+                      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                        <span style="color:#0f172a;">${d.left} <strong style="color:${m.primary};">${val}%</strong></span>
+                        <span style="color:#64748b;">${d.right} ${100 - val}%</span>
+                      </div>
+                      <div class="spectrum-bar-bg">
+                        <div class="spectrum-seg-left" style="width:${val}%; background:${m.primary};"></div>
+                        <div class="spectrum-seg-right" style="width:${100 - val}%; background:#cbd5e1;"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">🕸️ 四维本能雷达图</h3>
+              <p style="font-size:12px; color:#64748b; margin-bottom:8px;">你的自然天赋张力分布</p>
+              ${render4AxisRadarSVG(radarAxes, m.primary)}
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px;">🦁 核心灵魂画像与职场生态</h3>
+              <p style="font-size:13.5px; color:#334155; line-height:1.7; margin-bottom:12px;">${primary.summary}</p>
+              ${primary.strengths.map(s => `<div style="font-size:13px; color:#0f172a; font-weight:700; margin-bottom:6px;">✓ ${s}</div>`).join('')}
+              <p style="font-size:13px; color:#475569; margin-top:10px;"><strong>最佳生态位：</strong>${primary.workplace}</p>
+            </div>
+            <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
+              <div style="padding:14px; border-radius:14px; background:#ecfdf5; border-left:4px solid #059669;">
+                <div style="font-size:12px; font-weight:800; color:#059669;">🤝 最佳共生盟友：${ANIMAL_ARCHETYPES[primary.ally].name} (${ANIMAL_ARCHETYPES[primary.ally].title})</div>
+                <p style="font-size:13px; color:#334155; margin-top:4px;">${primary.allyReason}</p>
+              </div>
+              <div style="padding:14px; border-radius:14px; background:#fffbeb; border-left:4px solid #d97706;">
+                <div style="font-size:12px; font-weight:800; color:#d97706;">⚡ 天然张力对手：${ANIMAL_ARCHETYPES[primary.tension].name} (${ANIMAL_ARCHETYPES[primary.tension].title})</div>
+                <p style="font-size:13px; color:#334155; margin-top:4px;">${primary.tensionReason}</p>
+              </div>
+              <div style="padding:12px 14px; border-radius:14px; background:${m.softBg}; color:#78350f; font-size:12.5px;">
+                <strong>⚠️ 本能盲区提示：</strong>${primary.blindSpot}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (r.testId === 'love') {
+        const { code, profile, dims } = r;
+        const soul = LOVE_TYPES[profile.match];
+        const radarAxes = [
+          { label: dims.AI.win === 'A' ? '主动出击' : '慢热观察', sub: dims.AI.win, val: dims.AI.winPct },
+          { label: dims.RP.win === 'R' ? '浪漫理想' : '务实稳定', sub: dims.RP.win, val: dims.RP.winPct },
+          { label: dims.FS.win === 'F' ? '炽热外放' : '深沉内敛', sub: dims.FS.win, val: dims.FS.winPct },
+          { label: dims.DM.win === 'D' ? '深度共生' : '独立边界', sub: dims.DM.win, val: dims.DM.winPct }
+        ];
+        bodyHTML = `
+          <div class="card" style="background:linear-gradient(135deg, ${m.softBg} 0%, #ffffff 100%); border-color:${m.border}; margin-bottom:20px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:22px;">
+              <div>${renderEmblemSVG('love', code, m.primary, 102)}</div>
+              <div style="flex:1; min-width:240px;">
+                <span style="display:inline-block; padding:4px 12px; border-radius:999px; background:#ffffff; color:${m.primary}; font-size:12px; font-weight:800; margin-bottom:8px;">
+                  16型恋爱人格编码 · ${profile.en}
+                </span>
+                <h1 style="font-size:30px; font-weight:900; color:#0f172a;"><span style="color:${m.primary};">${code}</span> · ${profile.name}</h1>
+                <p style="font-size:13px; color:#64748b; font-weight:700; margin-top:4px;">核心爱的语言：${profile.language}</p>
+                <p style="font-size:14px; font-style:italic; color:#334155; margin-top:8px; background:rgba(255,255,255,0.85); padding:10px 14px; border-radius:12px;">
+                  “${profile.motto}”
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">💗 四维恋爱光谱分布</h3>
+              <p style="font-size:12px; color:#64748b; margin-bottom:16px;">剖析你在亲密关系中的真实情感倾向比例</p>
+              <div style="display:flex; flex-direction:column; gap:15px;">
+                ${LOVE_DIMENSIONS.map(d => {
+                  const info = dims[d.key];
+                  const lWin = info.leftPct >= info.rightPct;
+                  return `
+                    <div>
+                      <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
+                        <span style="color:${lWin ? m.primary : '#94a3b8'};">${d.left} ${info.leftPct}%</span>
+                        <span style="color:${!lWin ? m.primary : '#94a3b8'};">${info.rightPct}% ${d.right}</span>
+                      </div>
+                      <div class="spectrum-bar-bg">
+                        <div class="spectrum-seg-left" style="width:${info.leftPct}%; background:${lWin ? m.primary : '#cbd5e1'};"></div>
+                        <div class="spectrum-seg-right" style="width:${info.rightPct}%; background:${!lWin ? m.dark : '#cbd5e1'};"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">💎 恋爱人格水晶雷达</h3>
+              <p style="font-size:12px; color:#64748b; margin-bottom:8px;">主导恋爱特质强度分布</p>
+              ${render4AxisRadarSVG(radarAxes, m.primary)}
+            </div>
+          </div>
+
+          <div class="card" style="background:linear-gradient(135deg, #fff1f2 0%, #fdf2f8 100%); border:1px solid #fecdd3; margin-bottom:20px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
+            <div style="flex:1; min-width:240px;">
+              <div style="font-size:12px; font-weight:800; color:#e11d48; margin-bottom:4px;">💘 命定灵魂伴侣匹配 · SOULMATE MATCH</div>
+              <h3 style="font-size:20px; font-weight:900; color:#0f172a;">${profile.match} · ${soul.name} (${soul.en})</h3>
+              <p style="font-size:13px; color:#475569; margin-top:6px; line-height:1.6;">${profile.matchDesc}</p>
+            </div>
+            <button class="btn-secondary" style="border-color:#fda4af; color:#be123c;" onclick="openAtlasDetail('love', '${profile.match}')">
+              查看对方恋爱档案 →
+            </button>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px;">✨ 恋爱高光优势</h3>
+              <p style="font-size:13px; color:#475569; margin-bottom:12px; line-height:1.65;">${profile.summary}</p>
+              ${profile.strengths.map(s => `<div style="font-size:13px; color:#0f172a; font-weight:700; margin-bottom:6px;">♥ ${s}</div>`).join('')}
+            </div>
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px;">🌿 关系盲区与幸福处方</h3>
+              ${profile.blindSpots.map(b => `<div style="font-size:13px; color:#475569; margin-bottom:8px;">• ${b}</div>`).join('')}
+              <div style="margin-top:12px; padding:12px 14px; border-radius:14px; background:${m.softBg}; color:#9f1239; font-size:13px; line-height:1.6;">
+                <strong>💌 亲密进化建议：</strong>${profile.advice}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (r.testId === 'archetype') {
+        const { primary, wing, shadow, scoresMap } = r;
+        const qInfo = ARCHETYPE_QUADRANTS[primary.quad];
+        bodyHTML = `
+          <div class="card" style="background:linear-gradient(135deg, ${m.softBg} 0%, #ffffff 100%); border-color:${m.border}; margin-bottom:20px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:22px;">
+              <div>${renderEmblemSVG('archetype', primary.code, m.primary, 102)}</div>
+              <div style="flex:1; min-width:240px;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                  <span style="padding:4px 12px; border-radius:999px; background:${qInfo.bg}; color:${qInfo.color}; font-size:12px; font-weight:800;">
+                    ${qInfo.name} · 驱动力 ${primary.score}%
+                  </span>
+                  <span style="padding:4px 12px; border-radius:999px; background:#ffffff; color:#475569; font-size:12px; font-weight:700; border:1px solid #e2e8f0;">
+                    辅助翼型：${wing.name} (${wing.score}%)
+                  </span>
+                </div>
+                <h1 style="font-size:30px; font-weight:900; color:#0f172a;"><span style="color:${m.primary};">${primary.name}</span> · ${primary.en}</h1>
+                <p style="font-size:14px; color:#334155; margin-top:8px;"><strong>核心生命渴望：</strong>${primary.desire}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">🔮 荣格12原型极坐标图谱</h3>
+              <p style="font-size:12px; color:#64748b; margin-bottom:8px;">四大生命象限下十二种核心原型的激活强度</p>
+              ${render12SpokeRadarSVG(scoresMap)}
+            </div>
+
+            <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
+              <h3 style="font-size:16px; font-weight:800;">🏛️ 你的三位一体原型结构</h3>
+              <div style="padding:14px; border-radius:16px; background:${m.softBg};">
+                <div style="font-size:11px; font-weight:800; color:${m.primary};">1. 主导原型 (Dominant Archetype · ${primary.score}%)</div>
+                <div style="font-size:16px; font-weight:900; color:#0f172a; margin:2px 0;">${primary.name} (${primary.en})</div>
+                <div style="font-size:12.5px; color:#475569;">生命策略：${primary.strategy}</div>
+              </div>
+
+              <div style="padding:14px; border-radius:16px; background:#f8fafc; border:1px solid #e2e8f0;">
+                <div style="font-size:11px; font-weight:800; color:#475569;">2. 辅助翼型 (Auxiliary Wing · ${wing.score}%)</div>
+                <div style="font-size:15px; font-weight:800; color:#0f172a; margin:2px 0;">${wing.name} (${wing.en})</div>
+                <div style="font-size:12.5px; color:#475569;">辅助渴望：${wing.desire}</div>
+              </div>
+
+              <div style="padding:14px; border-radius:16px; background:#fff1f2; border:1px solid #fecdd3;">
+                <div style="font-size:11px; font-weight:800; color:#be123c;">3. 压抑阴影原型 (Repressed Shadow · ${shadow.score}%)</div>
+                <div style="font-size:15px; font-weight:800; color:#0f172a; margin:2px 0;">${shadow.name} (${shadow.en})</div>
+                <div style="font-size:12.5px; color:#475569;">潜意识中最容易回避的特质领域，接纳整合它将带来完整人格跃迁。</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom:20px;">
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px;">⚔️ 驱动力与潜意识恐惧</h3>
+              <p style="font-size:13.5px; color:#334155; line-height:1.7; margin-bottom:8px;"><strong>核心渴望：</strong>${primary.desire}</p>
+              <p style="font-size:13.5px; color:#334155; line-height:1.7; margin-bottom:8px;"><strong>最大恐惧：</strong>${primary.fear}</p>
+              <p style="font-size:13.5px; color:#334155; line-height:1.7;"><strong>行动策略：</strong>${primary.strategy}</p>
+            </div>
+            <div class="card">
+              <h3 style="font-size:16px; font-weight:800; margin-bottom:10px;">🌒 阴影陷阱与英雄之旅指引</h3>
+              <p style="font-size:13.5px; color:#475569; line-height:1.7; margin-bottom:12px;">${primary.shadow}</p>
+              <div style="padding:12px 14px; border-radius:14px; background:${m.softBg}; color:#4c1d95; font-size:13px; line-height:1.6;">
+                <strong>✨ 整合进化指引：</strong>${primary.growth}
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (r.testId === 'duality') {
+        const { day, night, contrastIndex, contrastLabel } = r;
+        const axisKeys = ['EI', 'SN', 'TF', 'JP'];
+        const vm = state.dualityViewMode;
+
+        bodyHTML = `
+          <div class="card" style="background:linear-gradient(135deg, #ebf2fe 0%, #e0e7ff 100%); border-color:${m.border}; margin-bottom:20px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:18px; margin-bottom:18px;">
+              <div style="flex:1; min-width:230px;">
+                <span style="display:inline-block; padding:4px 12px; border-radius:999px; background:#ffffff; color:#2563EB; font-size:12px; font-weight:800; margin-bottom:8px;">
+                  ${contrastLabel}
+                </span>
+                <h1 style="font-size:28px; font-weight:900; color:#0f172a;">白昼 ${day.code} × 深夜 ${night.code}</h1>
+                <p style="font-size:13px; color:#475569; margin-top:4px;">白天社会角色面具与深夜独处本真灵魂的双层映射</p>
+              </div>
+              <div>${renderContrastGaugeSVG(contrastIndex)}</div>
+            </div>
+
+            <!-- 昼夜视角切换器 -->
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-bottom:18px; background:rgba(255,255,255,0.65); padding:6px; border-radius:999px;">
+              <button onclick="state.dualityViewMode='both'; render();" style="padding:7px 16px; border-radius:999px; font-size:12.5px; font-weight:800; background:${vm==='both' ? '#0f172a' : 'transparent'}; color:${vm==='both' ? '#ffffff' : '#475569'};">
+                🌗 昼夜双面全景对比
+              </button>
+              <button onclick="state.dualityViewMode='day'; render();" style="padding:7px 16px; border-radius:999px; font-size:12.5px; font-weight:800; background:${vm==='day' ? '#2563EB' : 'transparent'}; color:${vm==='day' ? '#ffffff' : '#475569'};">
+                ☀️ 仅看白昼表层视角
+              </button>
+              <button onclick="state.dualityViewMode='night'; render();" style="padding:7px 16px; border-radius:999px; font-size:12.5px; font-weight:800; background:${vm==='night' ? '#1e293b' : 'transparent'}; color:${vm==='night' ? '#ffffff' : '#475569'};">
+                🌙 仅看深夜潜意识视角
+              </button>
+            </div>
+
+            <div class="${vm === 'both' ? 'grid-2' : ''}">
+              ${vm !== 'night' ? `
+                <div style="background:rgba(255,255,255,0.95); border-radius:20px; padding:22px; border:1px solid #bfdbfe;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:12px; font-weight:800; color:#d97706;">☀️ 白昼表层人格 (Day Persona)</span>
+                    <span style="font-size:11px; color:#64748b;">职场 · 社交 · 外显面具</span>
+                  </div>
+                  <div style="font-size:32px; font-weight:900; color:#2563EB; line-height:1.1;">${day.code}</div>
+                  <div style="font-size:16px; font-weight:800; color:#0f172a; margin:4px 0 8px;">${day.meta.name} · ${day.meta.motto}</div>
+                  <p style="font-size:13px; color:#475569; line-height:1.65;">${day.meta.summary}</p>
+                </div>
+              ` : ''}
+
+              ${vm !== 'day' ? `
+                <div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:#ffffff; border-radius:20px; padding:22px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:12px; font-weight:800; color:#93c5fd;">🌙 深夜潜意识人格 (Night Persona)</span>
+                    <span style="font-size:11px; color:#94a3b8;">独处 · 亲密 · 本真内核</span>
+                  </div>
+                  <div style="font-size:32px; font-weight:900; color:#60a5fa; line-height:1.1;">${night.code}</div>
+                  <div style="font-size:16px; font-weight:800; color:#f8fafc; margin:4px 0 8px;">${night.meta.name} · ${night.meta.motto}</div>
+                  <p style="font-size:13px; color:#cbd5e1; line-height:1.65;">${night.meta.summary}</p>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:20px;">
+            <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">⚖️ 四大维度「白昼 vs 深夜」双轨光谱</h3>
+            <p style="font-size:12px; color:#64748b; margin-bottom:18px;">蓝色条代表白昼外显社交倾向，深靛色条代表深夜独处或亲密关系中的真实倾向</p>
+
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              ${axisKeys.map(k => {
+                const dAx = day.axes[k];
+                const nAx = night.axes[k];
+                const flipped = dAx.win !== nAx.win;
+                return `
+                  <div style="padding:14px 16px; border-radius:16px; background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                      <span style="font-size:13px; font-weight:800; color:#0f172a;">${dAx.lName} vs ${dAx.rName}</span>
+                      <span style="font-size:11px; font-weight:800; padding:2px 10px; border-radius:999px; background:${flipped ? '#dbeafe' : '#e2e8f0'}; color:${flipped ? '#1d4ed8' : '#475569'};">
+                        ${flipped ? `昼夜反转 (${dAx.win} → ${nAx.win})` : `昼夜一致 (${dAx.win})`}
+                      </span>
+                    </div>
+
+                    ${vm !== 'night' ? `
+                      <div style="margin-bottom:${vm === 'both' ? '8px' : '0'};">
+                        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#2563EB; margin-bottom:3px;">
+                          <span>☀️ 白昼表层：${dAx.lName} ${dAx.lPct}%</span>
+                          <span>${dAx.rPct}% ${dAx.rName}</span>
+                        </div>
+                        <div class="spectrum-bar-bg">
+                          <div class="spectrum-seg-left" style="width:${dAx.lPct}%; background:#3b82f6;"></div>
+                          <div class="spectrum-seg-right" style="width:${dAx.rPct}%; background:#cbd5e1;"></div>
+                        </div>
+                      </div>
+                    ` : ''}
+
+                    ${vm !== 'day' ? `
+                      <div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#1e293b; margin-bottom:3px;">
+                          <span>🌙 深夜潜意识：${nAx.lName} ${nAx.lPct}%</span>
+                          <span>${nAx.rPct}% ${nAx.rName}</span>
+                        </div>
+                        <div class="spectrum-bar-bg">
+                          <div class="spectrum-seg-left" style="width:${nAx.lPct}%; background:#1e293b;"></div>
+                          <div class="spectrum-seg-right" style="width:${nAx.rPct}%; background:#cbd5e1;"></div>
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="animate-enter" style="max-width:940px; margin:0 auto;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <button class="btn-ghost" onclick="state.stage='portal'; render();">← 返回测评大厅</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn-ghost" style="color:#2563EB; border-color:#bfdbfe;" onclick="switchTab('profile')">🪪 查看综合人格护照</button>
+              <span style="font-size:12px; color:#64748b;">${r.timestamp}</span>
+            </div>
+          </div>
+
+          ${bodyHTML}
+
+          <div class="card" style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px; padding:20px;">
+            <button class="btn-primary" style="background:${m.primary};" onclick="openPosterModal()">
+              <span>🖼️ 生成专属分享海报 (支持下载PNG)</span>
+            </button>
+            <button class="btn-secondary" onclick="copyReport()">
+              <span>📋 一键复制文本报告</span>
+            </button>
+            <button class="btn-ghost" onclick="startIntro('${r.testId}')">
+              <span>🔄 重新测试</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * ============================================================================
+     * 七、全人格图鉴 (Atlas) — 五大完整图鉴浏览器
+     * ============================================================================
+     */
+    function renderAtlasView() {
+      const f = state.atlasTab;
+      let content = '';
+
+      if (f === 'mbti64') {
+        const { search, temp, base, ao, hc } = state.atlasFilter;
+        const kw = search.trim().toLowerCase();
+        const cards = [];
+
+        Object.keys(MBTI_16_TYPES).forEach(bCode => {
+          const bInfo = MBTI_16_TYPES[bCode];
+          if (temp !== 'ALL' && bInfo.temp !== temp) return;
+          if (base !== 'ALL' && bCode !== base) return;
+
+          Object.keys(MBTI_SUBTYPES).forEach(sKey => {
+            const sInfo = MBTI_SUBTYPES[sKey];
+            if (ao !== 'ALL' && sInfo.ao !== ao) return;
+            if (hc !== 'ALL' && sInfo.hc !== hc) return;
+
+            const fullCode = `${bCode}-${sKey}`;
+            const compactCode = `${bCode}-${sInfo.ao}${sInfo.hc}`;
+            const title = `${sInfo.label}${bInfo.name}`;
+            const haystack = `${fullCode} ${compactCode} ${title} ${sInfo.tag} ${bInfo.en}`.toLowerCase();
+            if (kw && !haystack.includes(kw)) return;
+
+            cards.push({ fullCode, title, bInfo, sInfo, tInfo: TEMPERAMENTS[bInfo.temp] });
+          });
+        });
+
+        content = `
+          <div class="filter-bar">
+            <div class="filter-row">
+              <input type="text" class="filter-input" style="flex:1; min-width:190px;" value="${search}"
+                oninput="state.atlasFilter.search=this.value; render();"
+                placeholder="搜索 64 型编码或称号 (如 INTJ-A-H / 果断温暖建筑师)..." />
+
+              <select class="filter-select" onchange="state.atlasFilter.temp=this.value; render();">
+                <option value="ALL" ${temp==='ALL'?'selected':''}>全部阵营 (NT/NF/SJ/SP)</option>
+                <option value="NT" ${temp==='NT'?'selected':''}>NT 分析家阵营</option>
+                <option value="NF" ${temp==='NF'?'selected':''}>NF 外交家阵营</option>
+                <option value="SJ" ${temp==='SJ'?'selected':''}>SJ 守护者阵营</option>
+                <option value="SP" ${temp==='SP'?'selected':''}>SP 探险家阵营</option>
+              </select>
+
+              <select class="filter-select" onchange="state.atlasFilter.base=this.value; render();">
+                <option value="ALL" ${base==='ALL'?'selected':''}>全部16基础型</option>
+                ${Object.keys(MBTI_16_TYPES).map(c => `<option value="${c}" ${base===c?'selected':''}>${c} · ${MBTI_16_TYPES[c].name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-row">
+              <span style="font-size:12px; font-weight:700; color:#64748b;">亚型筛选：</span>
+              <select class="filter-select" onchange="state.atlasFilter.ao=this.value; render();">
+                <option value="ALL" ${ao==='ALL'?'selected':''}>第五维 A/O (全部)</option>
+                <option value="A" ${ao==='A'?'selected':''}>-A 果断自信型</option>
+                <option value="O" ${ao==='O'?'selected':''}>-O 纠结敏锐型</option>
+              </select>
+              <select class="filter-select" onchange="state.atlasFilter.hc=this.value; render();">
+                <option value="ALL" ${hc==='ALL'?'selected':''}>第六维 H/C (全部)</option>
+                <option value="H" ${hc==='H'?'selected':''}>-H 温暖共情型</option>
+                <option value="C" ${hc==='C'?'selected':''}>-C 高冷克制型</option>
+              </select>
+              <span style="margin-left:auto; font-size:12px; font-weight:800; color:#3498DB;">共匹配 ${cards.length} / 64 种亚型</span>
+            </div>
+          </div>
+
+          ${cards.length === 0 ? `
+            <div class="card" style="text-align:center; padding:40px; color:#64748b;">未找到匹配的 64 型人格，请调整筛选条件</div>
+          ` : `
+            <div class="grid-4">
+              ${cards.map(c => `
+                <div class="card" onclick="openAtlasDetail('mbti64', '${c.fullCode}')" style="padding:16px; cursor:pointer;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:13.5px; font-weight:900; color:${c.tInfo.primary};">${c.fullCode}</span>
+                    <span style="padding:2px 8px; border-radius:999px; background:${c.tInfo.softBg}; color:${c.tInfo.text}; font-size:10.5px; font-weight:800;">${c.bInfo.temp}</span>
+                  </div>
+                  <div style="font-size:15.5px; font-weight:900; color:#0f172a; margin-bottom:4px;">${c.title}</div>
+                  <div style="font-size:11.5px; color:#64748b;">${c.sInfo.tag}</div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        `;
+      } else if (f === 'animal') {
+        content = `
+          <div class="grid-4">
+            ${Object.values(ANIMAL_ARCHETYPES).map(a => `
+              <div class="card" onclick="openAtlasDetail('animal', '${a.code}')" style="padding:18px; cursor:pointer;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="padding:3px 10px; border-radius:999px; background:${a.bg}; color:${a.color}; font-size:11px; font-weight:800;">${a.en}</span>
+                  <span style="font-size:11px; color:#94a3b8;">点击详情</span>
+                </div>
+                <div style="font-size:20px; font-weight:900; color:#0f172a;">${a.name}</div>
+                <div style="font-size:13px; font-weight:700; color:${a.color}; margin-bottom:8px;">${a.title}</div>
+                <p style="font-size:12px; color:#64748b; line-height:1.5;">${a.motto}</p>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (f === 'love') {
+        content = `
+          <div class="grid-4">
+            ${Object.values(LOVE_TYPES).map(l => `
+              <div class="card" onclick="openAtlasDetail('love', '${l.code}')" style="padding:18px; cursor:pointer;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:15px; font-weight:900; color:#E06377;">${l.code}</span>
+                  <span style="font-size:11px; color:#94a3b8;">拍档 ${l.match}</span>
+                </div>
+                <div style="font-size:17px; font-weight:900; color:#0f172a;">${l.name}</div>
+                <div style="font-size:11px; color:#64748b; margin-bottom:8px;">${l.en}</div>
+                <p style="font-size:12px; color:#475569; line-height:1.5;">${l.motto}</p>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (f === 'archetype') {
+        content = `
+          <div class="grid-3">
+            ${JUNG_ARCHETYPES.map(a => {
+              const q = ARCHETYPE_QUADRANTS[a.quad];
+              return `
+                <div class="card" onclick="openAtlasDetail('archetype', '${a.code}')" style="padding:20px; cursor:pointer;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="padding:3px 10px; border-radius:999px; background:${q.bg}; color:${q.color}; font-size:11px; font-weight:800;">${q.name}</span>
+                    <span style="font-size:11px; color:#94a3b8;">${a.en}</span>
+                  </div>
+                  <div style="font-size:19px; font-weight:900; color:#0f172a; margin-bottom:6px;">${a.name}</div>
+                  <p style="font-size:12px; color:#475569; line-height:1.55;"><strong>核心渴望：</strong>${a.desire}</p>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else {
+        const oppositeCode = (c) => {
+          const map = { E: 'I', I: 'E', S: 'N', N: 'S', T: 'F', F: 'T', J: 'P', P: 'J' };
+          return c.split('').map(ch => map[ch]).join('');
+        };
+        content = `
+          <div class="card" style="margin-bottom:20px;">
+            <h3 style="font-size:17px; font-weight:900; margin-bottom:6px;">🌗 自由双面人格镜像模拟器</h3>
+            <p style="font-size:12.5px; color:#64748b; margin-bottom:14px;">任意搭配白昼表层人格与深夜潜意识人格，探索 256 种双面组合</p>
+            ${renderDualityExplorerWidget()}
+          </div>
+
+          <h3 style="font-size:16px; font-weight:900; margin-bottom:12px; color:#0f172a;">📖 16型核心「白昼 × 镜像影子」对照谱</h3>
+          <div class="grid-4">
+            ${Object.values(MBTI_16_TYPES).map(t => {
+              const shadowCode = oppositeCode(t.code);
+              const shadowInfo = MBTI_16_TYPES[shadowCode];
+              return `
+                <div class="card" onclick="openAtlasDetail('duality', '${t.code}')" style="padding:16px; cursor:pointer;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:14px; font-weight:900; color:#2563EB;">☀️ ${t.code}</span>
+                    <span style="font-size:12px; font-weight:800; color:#475569;">🌙 ${shadowCode}</span>
+                  </div>
+                  <div style="font-size:15px; font-weight:900; color:#0f172a; margin-bottom:4px;">${t.name} × ${shadowInfo.name}</div>
+                  <div style="font-size:11.5px; color:#64748b; line-height:1.45;">${t.motto}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="animate-enter">
+          <div style="margin-bottom:18px;">
+            <h1 style="font-size:26px; font-weight:900; color:#0f172a;">🧭 全人格图鉴 (Atlas)</h1>
+            <p style="font-size:13px; color:#64748b; margin-top:4px;">一站式查阅五大测评体系下的 64 型人格、8 大动物原型、16 型恋爱编码、荣格 12 原型与双面人格对照谱</p>
+          </div>
+
+          <div class="atlas-tabs">
+            <button class="atlas-tab ${f === 'mbti64' ? 'active' : ''}" style="${f === 'mbti64' ? 'background:#3498DB;' : ''}" onclick="state.atlasTab='mbti64'; render();">🔷 MBTI-64 全图鉴 (64)</button>
+            <button class="atlas-tab ${f === 'animal' ? 'active' : ''}" style="${f === 'animal' ? 'background:#B87333;' : ''}" onclick="state.atlasTab='animal'; render();">🦁 8大动物原型 (8)</button>
+            <button class="atlas-tab ${f === 'love' ? 'active' : ''}" style="${f === 'love' ? 'background:#E06377;' : ''}" onclick="state.atlasTab='love'; render();">💗 16型恋爱人格 (16)</button>
+            <button class="atlas-tab ${f === 'archetype' ? 'active' : ''}" style="${f === 'archetype' ? 'background:#7B3F9E;' : ''}" onclick="state.atlasTab='archetype'; render();">👑 荣格12原型 (12)</button>
+            <button class="atlas-tab ${f === 'duality' ? 'active' : ''}" style="${f === 'duality' ? 'background:#2563EB;' : ''}" onclick="state.atlasTab='duality'; render();">🌗 MBTI双面对照谱 (16)</button>
+          </div>
+
+          ${content}
+        </div>
+      `;
+    }
+
+    function renderDualityExplorerWidget() {
+      const codes = Object.keys(MBTI_16_TYPES);
+      const dCode = state.dualitySim.day;
+      const nCode = state.dualitySim.night;
+      const dMeta = MBTI_16_TYPES[dCode];
+      const nMeta = MBTI_16_TYPES[nCode];
+
+      let diffLetters = 0;
+      for (let i = 0; i < 4; i++) if (dCode[i] !== nCode[i]) diffLetters++;
+      const simPct = [18, 42, 65, 84, 96][diffLetters];
+
+      return `
+        <div>
+          <div class="grid-2" style="margin-bottom:14px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:800; color:#2563EB; margin-bottom:5px;">☀️ 白昼表层人格：</label>
+              <select class="filter-select" style="width:100%;" onchange="state.dualitySim.day=this.value; render();">
+                ${codes.map(c => `<option value="${c}" ${c === dCode ? 'selected' : ''}>${c} · ${MBTI_16_TYPES[c].name}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:800; color:#1e293b; margin-bottom:5px;">🌙 深夜潜意识人格：</label>
+              <select class="filter-select" style="width:100%;" onchange="state.dualitySim.night=this.value; render();">
+                ${codes.map(c => `<option value="${c}" ${c === nCode ? 'selected' : ''}>${c} · ${MBTI_16_TYPES[c].name}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div style="padding:16px; border-radius:16px; background:linear-gradient(135deg, #eff6ff 0%, #f1f5f9 100%); border:1px solid #bfdbfe;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <strong style="font-size:17px; color:#0f172a;">白昼 ${dCode} (${dMeta.name}) × 深夜 ${nCode} (${nMeta.name})</strong>
+              <span style="padding:3px 12px; border-radius:999px; background:#2563EB; color:#ffffff; font-size:12px; font-weight:800;">反差张力 ${simPct}%</span>
+            </div>
+            <p style="font-size:13px; color:#334155; line-height:1.65;">
+              在白天社会场域中，你展现出 <strong>${dMeta.name}</strong>（${dMeta.motto}）；而当夜幕降临或面对至亲之人时，你内心深处的 <strong>${nMeta.name}</strong> 便会悄然苏醒，构成极富层次感的双面魅力。
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function openAtlasDetail(type, code) {
+      const modal = document.getElementById('app-modal');
+      const titleEl = document.getElementById('modal-title');
+      const bodyEl = document.getElementById('modal-body');
+      const footEl = document.getElementById('modal-foot');
+      let html = '';
+
+      if (type === 'mbti64') {
+        const parts = code.split('-');
+        const bCode = parts[0];
+        const sKey = `${parts[1]}-${parts[2]}`;
+        const bInfo = MBTI_16_TYPES[bCode];
+        const sInfo = MBTI_SUBTYPES[sKey];
+        const tInfo = TEMPERAMENTS[bInfo.temp];
+        const fullTitle = `${sInfo.label}${bInfo.name}`;
+        titleEl.textContent = `${code} · ${fullTitle}`;
+        html = `
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+            ${renderEmblemSVG('mbti64', bCode, tInfo.primary, 74)}
+            <div>
+              <span style="font-size:11.5px; font-weight:800; color:${tInfo.primary};">${tInfo.name} · ${sInfo.tag}</span>
+              <h3 style="font-size:21px; font-weight:900; color:#0f172a;">${code} · ${fullTitle}</h3>
+              <p style="font-size:12.5px; font-style:italic; color:#475569; margin-top:2px;">“${bInfo.motto}”</p>
+            </div>
+          </div>
+          <p style="font-size:13px; color:#334155; line-height:1.65; margin-bottom:12px;">${bInfo.summary}</p>
+          <div style="padding:11px 13px; border-radius:12px; background:#eff6ff; font-size:12.5px; color:#1e40af; margin-bottom:10px;">
+            <strong>⚡ ${sInfo.aoName}：</strong>${sInfo.aoAnalysis}
+          </div>
+          <div style="padding:11px 13px; border-radius:12px; background:#ecfdf5; font-size:12.5px; color:#065f46; margin-bottom:10px;">
+            <strong>🌿 ${sInfo.hcName}：</strong>${sInfo.hcAnalysis}
+          </div>
+          <div style="font-size:12.5px; color:#475569;">
+            <strong>🚀 适配职业：</strong>${bInfo.careers.join(' / ')}
+          </div>
+        `;
+      } else if (type === 'animal') {
+        const a = ANIMAL_ARCHETYPES[code];
+        titleEl.textContent = `${a.name} · ${a.title} (${a.en})`;
+        html = `
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+            ${renderEmblemSVG('animal', a.code, a.color, 72)}
+            <div>
+              <h3 style="font-size:21px; font-weight:900; color:#0f172a;">${a.name} · ${a.title}</h3>
+              <p style="font-size:12.5px; font-style:italic; color:#475569;">“${a.motto}”</p>
+            </div>
+          </div>
+          <p style="font-size:13px; color:#334155; line-height:1.65; margin-bottom:12px;">${a.summary}</p>
+          <div style="font-size:12.5px; color:#0f172a; margin-bottom:10px;"><strong>核心优势：</strong>${a.strengths.join('、')}</div>
+          <div style="font-size:12.5px; color:#475569; margin-bottom:10px;"><strong>最佳生态位：</strong>${a.workplace}</div>
+          <div style="padding:10px 12px; border-radius:12px; background:#ecfdf5; font-size:12.5px; color:#065f46;">
+            <strong>🤝 最佳共生盟友：</strong>${ANIMAL_ARCHETYPES[a.ally].name} — ${a.allyReason}
+          </div>
+        `;
+      } else if (type === 'love') {
+        const l = LOVE_TYPES[code];
+        const soul = LOVE_TYPES[l.match];
+        titleEl.textContent = `${l.code} · ${l.name} (${l.en})`;
+        html = `
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+            ${renderEmblemSVG('love', l.code, '#E06377', 72)}
+            <div>
+              <h3 style="font-size:21px; font-weight:900; color:#0f172a;">${l.code} · ${l.name}</h3>
+              <p style="font-size:12px; color:#E06377; font-weight:700;">爱的语言：${l.language}</p>
+            </div>
+          </div>
+          <p style="font-size:13px; color:#334155; line-height:1.65; margin-bottom:12px;">${l.summary}</p>
+          <div style="padding:11px 13px; border-radius:12px; background:#fff1f2; color:#9f1239; font-size:12.5px; margin-bottom:10px;">
+            <strong>💘 命定灵魂伴侣：${l.match} (${soul.name})</strong><br/>${l.matchDesc}
+          </div>
+          <div style="font-size:12.5px; color:#475569;"><strong>💌 亲密建议：</strong>${l.advice}</div>
+        `;
+      } else if (type === 'archetype') {
+        const a = JUNG_ARCHETYPES.find(x => x.code === code);
+        const q = ARCHETYPE_QUADRANTS[a.quad];
+        titleEl.textContent = `${a.name} · ${a.en}`;
+        html = `
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+            ${renderEmblemSVG('archetype', a.code, '#7B3F9E', 72)}
+            <div>
+              <span style="font-size:11px; font-weight:800; color:${q.color};">${q.name}</span>
+              <h3 style="font-size:21px; font-weight:900; color:#0f172a;">${a.name} · ${a.en}</h3>
+            </div>
+          </div>
+          <p style="font-size:13px; color:#334155; line-height:1.65; margin-bottom:8px;"><strong>核心渴望：</strong>${a.desire}</p>
+          <p style="font-size:13px; color:#334155; line-height:1.65; margin-bottom:8px;"><strong>最大恐惧：</strong>${a.fear}</p>
+          <p style="font-size:13px; color:#334155; line-height:1.65; margin-bottom:12px;"><strong>行动策略：</strong>${a.strategy}</p>
+          <div style="padding:11px 13px; border-radius:12px; background:#f3eaf8; color:#582875; font-size:12.5px;">
+            <strong>🌒 阴影与整合：</strong>${a.shadow} ${a.growth}
+          </div>
+        `;
+      } else if (type === 'duality') {
+        const map = { E: 'I', I: 'E', S: 'N', N: 'S', T: 'F', F: 'T', J: 'P', P: 'J' };
+        const sCode = code.split('').map(ch => map[ch]).join('');
+        const dInfo = MBTI_16_TYPES[code];
+        const sInfo = MBTI_16_TYPES[sCode];
+        titleEl.textContent = `双面对照谱：白昼 ${code} × 深夜 ${sCode}`;
+        html = `
+          <div style="padding:14px; border-radius:14px; background:#eff6ff; border:1px solid #bfdbfe; margin-bottom:12px;">
+            <div style="font-size:11.5px; font-weight:800; color:#2563EB;">☀️ 白昼表层人格：${code} · ${dInfo.name}</div>
+            <p style="font-size:12.5px; color:#334155; margin-top:4px; line-height:1.6;">${dInfo.summary}</p>
+          </div>
+          <div style="padding:14px; border-radius:14px; background:#0f172a; color:#f8fafc;">
+            <div style="font-size:11.5px; font-weight:800; color:#60a5fa;">🌙 深夜镜像潜意识：${sCode} · ${sInfo.name}</div>
+            <p style="font-size:12.5px; color:#cbd5e1; margin-top:4px; line-height:1.6;">${sInfo.summary}</p>
+          </div>
+        `;
+      }
+
+      bodyEl.innerHTML = html;
+      const testMapId = type;
+      footEl.innerHTML = `
+        <button class="btn-primary" style="background:${TEST_META[testMapId].primary}; padding:9px 18px; font-size:12.5px;" onclick="closeModal(); startIntro('${testMapId}');">
+          去测测我的${TEST_META[testMapId].cnName} →
+        </button>
+        <button class="btn-ghost" onclick="closeModal()">关闭</button>
+      `;
+      modal.classList.add('open');
+    }
+
+    /**
+     * ============================================================================
+     * 八、综合人格档案 (My Profile & History) — 多维人格全景护照 + 跨体系融合分析
+     * ============================================================================
+     */
+    function generateCrossSystemSynthesis(latestMap) {
+      const doneKeys = Object.keys(latestMap);
+      if (doneKeys.length < 2) return null;
+
+      const insights = [];
+      const m64 = latestMap.mbti64;
+      const anim = latestMap.animal;
+      const love = latestMap.love;
+      const arch = latestMap.archetype;
+      const dual = latestMap.duality;
+
+      // 1. MBTI-64 + 动物原型联动分析
+      if (m64 && anim) {
+        const isIntro = m64.baseCode[0] === 'I';
+        const isHighDom = anim.scores.DOM >= 60;
+        if (isIntro && isHighDom) {
+          insights.push(`<strong>【静水流深的领地掌控力】</strong>你的 MBTI-64 为内向能量型（${m64.fullCode}），但动物原型呈现出高领地领导力特质（${anim.primary.name} · ${anim.scores.DOM}%），说明你不依赖喧嚣社交刷存在感，而是在关键决策时刻用深思熟虑后的权威定调全局。`);
+        } else {
+          insights.push(`<strong>【认知结构与原始本能共振】</strong>你的 ${m64.fullCode}（${m64.fullTitle}）认知架构与「${anim.primary.name} · ${anim.primary.title}」本能形成高度协同，赋予你在日常处事中「${m64.subInfo.label}」的外显风格与「${anim.primary.strengths[0]}」的底层行动力。`);
+        }
+      }
+
+      // 2. MBTI-64 / 动物原型 + 16型恋爱人格联动
+      if (love && (m64 || anim)) {
+        const isWarm = m64 ? m64.subInfo.hc === 'H' : anim.scores.SOC >= 55;
+        const isActiveLove = love.code[0] === 'A';
+        if (!isWarm && isActiveLove) {
+          insights.push(`<strong>【外冷内热的直球恋爱反差】</strong>日常社交中你倾向克制边界，但在亲密关系里（${love.code} · ${love.profile.name}）却敢于主动奔赴，把最珍贵的偏爱留给唯一认定的人。`);
+        } else {
+          insights.push(`<strong>【亲密依恋与情感光谱映射】</strong>在亲密关系中你化身为「${love.code} · ${love.profile.name}」，最看重「${love.profile.language}」，与 ${love.profile.match}（${LOVE_TYPES[love.profile.match].name}）能产生最深层的灵魂共振。`);
+        }
+      }
+
+      // 3. 荣格12原型 + 昼夜双面人格联动
+      if (arch && dual) {
+        insights.push(`<strong>【生命原动力与昼夜面具张力】</strong>驱动你人生的核心荣格原型是「${arch.primary.name}」（渴望${arch.primary.desire}）。在白昼社会场域中你以 ${dual.day.code} 的姿态回应外界期待，而深夜独处时则切换为 ${dual.night.code}（昼夜反差指数 ${dual.contrastIndex}%），通过「${arch.wing.name}」翼型平衡内外能量。`);
+      } else if (arch) {
+        insights.push(`<strong>【核心生命驱动力】</strong>荣格「${arch.primary.name}」原型（${arch.primary.score}%）赋予你追求「${arch.primary.desire}」的使命感，同时需留意接纳潜意识阴影「${arch.shadow.name}」所代表的能量维度。`);
+      } else if (dual) {
+        insights.push(`<strong>【昼夜双面心理弹性】</strong>白昼表层 ${dual.day.code} 与深夜潜意识 ${dual.night.code} 构成了你 ${dual.contrastIndex}% 的昼夜反差指数（${dual.contrastLabel}），体现了你在社会角色适应与本真自我保护之间的精妙平衡。`);
+      }
+
+      return insights;
+    }
+
+    function renderProfileAndHistoryView() {
+      const latestMap = {};
+      state.history.forEach(item => {
+        if (!latestMap[item.testId]) latestMap[item.testId] = item;
+      });
+
+      const completedCount = Object.keys(latestMap).length;
+      const synthesisList = generateCrossSystemSynthesis(latestMap);
+      const order = ['mbti64', 'animal', 'love', 'archetype', 'duality'];
+
+      return `
+        <div class="animate-enter">
+          <!-- 多维人格全景护照 (Unified Persona Passport) -->
+          <div class="card" style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #312e81 100%); color:#ffffff; border:none; margin-bottom:24px; padding:26px 22px;">
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:20px;">
+              <div>
+                <div style="display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px; background:rgba(255,255,255,0.12); color:#93c5fd; font-size:11.5px; font-weight:800; margin-bottom:8px;">
+                  <span>🪪 UNIFIED PERSONA PASSPORT · 多维人格全景护照</span>
+                </div>
+                <h1 style="font-size:24px; font-weight:900; letter-spacing:-0.01em;">我的全维灵魂人格档案</h1>
+                <p style="font-size:12.5px; color:#cbd5e1; margin-top:4px;">点亮五大心理测评维度，解锁跨体系人格融合深度解析</p>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:26px; font-weight:900; color:#60a5fa;">${completedCount} <span style="font-size:14px; color:#94a3b8;">/ 5 维度已点亮</span></div>
+                <div style="width:140px; height:7px; background:rgba(255,255,255,0.15); border-radius:999px; overflow:hidden; margin-top:6px; margin-left:auto;">
+                  <div style="width:${completedCount * 20}%; height:100%; background:linear-gradient(90deg, #38bdf8, #818cf8);"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5张护照徽章卡 -->
+            <div class="grid-5" style="margin-bottom:${synthesisList ? '20px' : '0'};">
+              ${order.map(tid => {
+                const m = TEST_META[tid];
+                const rec = latestMap[tid];
+                if (rec) {
+                  let badgeVal = rec.headline;
+                  if (tid === 'mbti64') badgeVal = rec.fullCode;
+                  else if (tid === 'animal') badgeVal = rec.primary.name;
+                  else if (tid === 'love') badgeVal = rec.code;
+                  else if (tid === 'archetype') badgeVal = rec.primary.name;
+                  else if (tid === 'duality') badgeVal = `${rec.day.code}×${rec.night.code}`;
+
+                  return `
+                    <div onclick="reopenHistory('${rec.id}')" style="cursor:pointer; padding:14px; border-radius:16px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.22); transition:transform 0.2s;">
+                      <div style="font-size:11px; font-weight:700; color:#93c5fd; margin-bottom:4px;">✓ ${m.cnName}</div>
+                      <div style="font-size:18px; font-weight:900; color:#ffffff; margin-bottom:3px;">${badgeVal}</div>
+                      <div style="font-size:11px; color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${rec.headline}</div>
+                    </div>
+                  `;
+                } else {
+                  return `
+                    <div onclick="startIntro('${tid}')" style="cursor:pointer; padding:14px; border-radius:16px; background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.22);">
+                      <div style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:4px;">○ ${m.cnName}</div>
+                      <div style="font-size:15px; font-weight:800; color:#64748b; margin-bottom:4px;">待解锁</div>
+                      <div style="font-size:11px; color:#60a5fa; font-weight:700;">点击前往测评 →</div>
+                    </div>
+                  `;
+                }
+              }).join('')}
+            </div>
+
+            <!-- 跨体系人格深度融合解析（完成2项及以上自动激活） -->
+            ${synthesisList ? `
+              <div style="padding:18px; border-radius:18px; background:rgba(255,255,255,0.08); border:1px solid rgba(147,197,253,0.3);">
+                <div style="font-size:13.5px; font-weight:900; color:#93c5fd; margin-bottom:10px;">
+                  ✨ 跨体系人格深度融合解析（已融合 ${completedCount} 项测评数据）
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  ${synthesisList.map(txt => `<p style="font-size:13px; color:#e2e8f0; line-height:1.65;">${txt}</p>`).join('')}
+                </div>
+              </div>
+            ` : `
+              <div style="margin-top:16px; padding:12px 16px; border-radius:14px; background:rgba(255,255,255,0.06); font-size:12.5px; color:#cbd5e1; text-align:center;">
+                💡 完成任意 <strong>2项及以上</strong> 测评，即可自动激活「跨体系人格深度融合解析」！
+              </div>
+            `}
+          </div>
+
+          <!-- 历史测评记录列表 -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div>
+              <h2 style="font-size:20px; font-weight:900; color:#0f172a;">📜 本地测评历史档案 (${state.history.length})</h2>
+              <p style="font-size:12.5px; color:#64748b;">所有记录自动保存在本地浏览器中，支持随时重温完整报告或生成海报</p>
+            </div>
+            ${state.history.length > 0 ? (
+              state.confirmClearHistory ? `
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:12px; font-weight:700; color:#dc2626;">确认清空全部？</span>
+                  <button class="btn-primary" style="background:#dc2626; padding:7px 14px; font-size:12px;" onclick="executeClearHistory()">确认清空</button>
+                  <button class="btn-ghost" style="padding:7px 12px; font-size:12px;" onclick="state.confirmClearHistory=false; render();">取消</button>
+                </div>
+              ` : `
+                <button class="btn-ghost" style="color:#dc2626;" onclick="state.confirmClearHistory=true; render();">🗑️ 清空全部记录</button>
+              `
+            ) : ''}
+          </div>
+
+          ${state.history.length === 0 ? `
+            <div class="card" style="text-align:center; padding:48px 20px;">
+              <div style="font-size:40px; margin-bottom:10px;">🧭</div>
+              <h3 style="font-size:18px; font-weight:800; margin-bottom:6px;">暂无测评历史记录</h3>
+              <p style="font-size:13px; color:#64748b; margin-bottom:18px;">前往测评大厅开启你的第一次灵魂探索之旅吧</p>
+              <button class="btn-primary" style="background:#0f172a;" onclick="switchTab('tests')">前往测评大厅</button>
+            </div>
+          ` : `
+            <div class="grid-3">
+              ${state.history.map(item => {
+                const m = TEST_META[item.testId] || TEST_META.mbti64;
+                return `
+                  <div class="card" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
+                    <div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="padding:3px 10px; border-radius:999px; background:${m.softBg}; color:${m.primary}; font-size:11px; font-weight:800;">
+                          ${item.testName}
+                        </span>
+                        <span style="font-size:11px; color:#94a3b8;">${item.timestamp}</span>
+                      </div>
+                      <h3 style="font-size:17px; font-weight:900; color:#0f172a; margin-bottom:4px;">${item.headline}</h3>
+                      <p style="font-size:12px; color:#64748b; line-height:1.45;">${item.subHeadline}</p>
+                    </div>
+                    <div style="display:flex; gap:8px; padding-top:10px; border-top:1px solid #f1f5f9;">
+                      <button class="btn-primary" style="flex:1; background:${m.primary}; padding:8px 12px; font-size:12px;" onclick="reopenHistory('${item.id}')">
+                        查看报告
+                      </button>
+                      <button class="btn-ghost" style="padding:8px 12px; font-size:12px;" onclick="reopenHistoryAndPoster('${item.id}')">
+                        🖼️ 海报
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function reopenHistory(id) {
+      const found = state.history.find(x => x.id === id);
+      if (!found) return;
+      state.result = found;
+      state.activeTest = found.testId;
+      state.tab = 'tests';
+      state.stage = 'result';
+      ['tests', 'atlas', 'profile'].forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        if (btn) btn.classList.toggle('active', t === 'tests');
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    function reopenHistoryAndPoster(id) {
+      reopenHistory(id);
+      setTimeout(() => openPosterModal(), 80);
+    }
+
+    function executeClearHistory() {
+      state.history = [];
+      state.confirmClearHistory = false;
+      localStorage.removeItem(STORAGE_KEY);
+      updateHistoryBadge();
+      showToast('已清空全部本地测评历史');
+      render();
+    }
+
+    /**
+     * ============================================================================
+     * 九、专属分享海报生成 (自定义昵称 + 100% 离线 HTML5 Canvas PNG 导出) & 文本复制
+     * ============================================================================
+     */
+    function getPosterMetadata(r) {
+      const m = TEST_META[r.testId];
+      let motto = '';
+      let bars = [];
+      if (r.testId === 'mbti64') {
+        motto = r.baseInfo.motto;
+        bars = ['EI', 'SN', 'TF', 'JP', 'AO', 'HC'].map(k => {
+          const d = r.dimensions[k];
+          return { label: d.winner === d.l ? d.lName : d.rName, pct: d.winnerPct };
+        });
+      } else if (r.testId === 'animal') {
+        motto = r.primary.motto;
+        bars = [
+          { label: '领地领导力', pct: r.scores.DOM },
+          { label: '群居共情力', pct: r.scores.SOC },
+          { label: '敏捷变通度', pct: r.scores.AGI },
+          { label: '沉思洞察力', pct: r.scores.WIS }
+        ];
+      } else if (r.testId === 'love') {
+        motto = r.profile.motto;
+        bars = LOVE_DIMENSIONS.map(d => {
+          const info = r.dims[d.key];
+          return { label: info.win === d.lCode ? d.left : d.right, pct: info.winPct };
+        });
+      } else if (r.testId === 'archetype') {
+        motto = r.primary.desire;
+        bars = r.sorted.slice(0, 4).map(a => ({ label: `${a.name} (${a.en})`, pct: a.score }));
+      } else if (r.testId === 'duality') {
+        motto = `昼夜反差指数 ${r.contrastIndex}% · ${r.contrastLabel}`;
+        bars = ['EI', 'SN', 'TF', 'JP'].map(k => {
+          const dAx = r.day.axes[k];
+          const nAx = r.night.axes[k];
+          return { label: `昼 ${dAx.win}(${dAx.lPct}%) / 夜 ${nAx.win}(${nAx.lPct}%)`, pct: Math.max(dAx.lPct, nAx.lPct) };
+        });
+      }
+      return { m, motto, bars };
+    }
+
+    function openPosterModal() {
+      const r = state.result;
+      if (!r) return;
+      const modal = document.getElementById('app-modal');
+      const titleEl = document.getElementById('modal-title');
+      const bodyEl = document.getElementById('modal-body');
+      const footEl = document.getElementById('modal-foot');
+
+      titleEl.textContent = '🖼️ 专属人格分享海报';
+      bodyEl.innerHTML = `
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:800; color:#475569; margin-bottom:5px;">
+            ✏️ 自定义海报专属昵称（可选，实时同步预览与下载）：
+          </label>
+          <input type="text" class="filter-input" style="width:100%;" maxlength="20"
+            value="${state.posterNickname}"
+            oninput="state.posterNickname=this.value; updatePosterPreview();"
+            placeholder="输入你的昵称，例如：星河漫游者..." />
+        </div>
+        <div id="poster-preview-slot"></div>
+      `;
+
+      footEl.innerHTML = `
+        <button class="btn-primary" style="background:${TEST_META[r.testId].primary}; padding:10px 18px; font-size:12.5px;" onclick="downloadPosterPNG()">
+          <span>⬇️ 保存高清海报图片 (PNG)</span>
+        </button>
+        <button class="btn-secondary" style="padding:9px 16px; font-size:12.5px;" onclick="copyReport()">
+          <span>📋 复制报告文案</span>
+        </button>
+      `;
+
+      updatePosterPreview();
+      modal.classList.add('open');
+    }
+
+    function updatePosterPreview() {
+      const slot = document.getElementById('poster-preview-slot');
+      const r = state.result;
+      if (!slot || !r) return;
+      const { m, motto, bars } = getPosterMetadata(r);
+      const nick = state.posterNickname.trim();
+
+      slot.innerHTML = `
+        <div style="border-radius:22px; overflow:hidden; border:1px solid ${m.border}; background:#ffffff; box-shadow:0 12px 30px rgba(15,23,42,0.1);">
+          <div style="position:relative; padding:24px 20px; text-align:center; background:linear-gradient(135deg, ${m.softBg} 0%, #ffffff 100%);">
+            <div style="font-size:11px; font-weight:800; letter-spacing:0.08em; color:${m.primary}; margin-bottom:6px;">
+              64PERSONALITY · ${m.cnName}
+            </div>
+            ${nick ? `<div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:8px;">@${nick} 的专属灵魂档案</div>` : ''}
+            <div style="display:flex; justify-content:center; margin-bottom:10px;">
+              ${renderEmblemSVG(r.testId, r.baseCode || r.code || '', m.primary, 74)}
+            </div>
+            <h2 style="font-size:23px; font-weight:900; color:#0f172a; line-height:1.25;">${r.headline}</h2>
+            <p style="font-size:12px; font-weight:700; color:#475569; margin-top:4px;">${r.subHeadline}</p>
+            <p style="font-size:12px; font-style:italic; color:#334155; margin-top:10px; background:rgba(255,255,255,0.85); padding:8px 12px; border-radius:10px;">
+              “${motto}”
+            </p>
+          </div>
+          <div style="padding:16px 20px; background:#ffffff;">
+            ${bars.map(b => `
+              <div style="margin-bottom:9px;">
+                <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; margin-bottom:3px;">
+                  <span style="color:#0f172a;">${b.label}</span>
+                  <span style="color:${m.primary};">${b.pct}%</span>
+                </div>
+                <div style="width:100%; height:7px; background:#f1f5f9; border-radius:999px; overflow:hidden;">
+                  <div style="width:${b.pct}%; height:100%; background:${m.primary}; border-radius:999px;"></div>
+                </div>
+              </div>
+            `).join('')}
+            <div style="margin-top:12px; padding-top:10px; border-top:1px dashed #e2e8f0; display:flex; justify-content:space-between; font-size:10.5px; color:#94a3b8;">
+              <span>64personality · 全维人格测评实验室</span>
+              <span>${r.timestamp.split(' ')[0]}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function drawRoundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+      const chars = text.split('');
+      let line = '';
+      let curY = y;
+      for (let i = 0; i < chars.length; i++) {
+        const testLine = line + chars[i];
+        if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+          ctx.fillText(line, x, curY);
+          line = chars[i];
+          curY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, curY);
+      return curY;
+    }
+
+    function downloadPosterPNG() {
+      const r = state.result;
+      if (!r) return;
+      const { m, motto, bars } = getPosterMetadata(r);
+      const nick = state.posterNickname.trim();
+
+      const canvas = document.createElement('canvas');
+      const W = 750;
+      const H = 1080;
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, W, H);
+
+      drawRoundRect(ctx, 36, 36, W - 72, H - 72, 36);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = m.border;
+      ctx.stroke();
+
+      ctx.save();
+      drawRoundRect(ctx, 36, 36, W - 72, 460, 36);
+      ctx.clip();
+      const grad = ctx.createLinearGradient(0, 36, W, 496);
+      grad.addColorStop(0, m.softBg);
+      grad.addColorStop(1, '#ffffff');
+      ctx.fillStyle = grad;
+      ctx.fillRect(36, 36, W - 72, 460);
+      ctx.restore();
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = m.primary;
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(`64PERSONALITY · ${m.cnName}`, W / 2, 98);
+
+      if (nick) {
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText(`@${nick} 的专属灵魂档案`, W / 2, 138);
+      }
+
+      const cy = nick ? 218 : 200;
+      ctx.beginPath();
+      ctx.arc(W / 2, cy, 56, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = m.primary;
+      ctx.stroke();
+
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const ang = (-90 + i * 60) * Math.PI / 180;
+        const px = W / 2 + 34 * Math.cos(ang);
+        const py = cy + 34 * Math.sin(ang);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = m.primary;
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '900 42px sans-serif';
+      ctx.fillText(r.headline, W / 2, cy + 108);
+
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(r.subHeadline, W / 2, cy + 148);
+
+      drawRoundRect(ctx, 76, cy + 174, W - 152, 86, 18);
+      ctx.fillStyle = m.softBg;
+      ctx.fill();
+      ctx.fillStyle = '#334155';
+      ctx.font = 'italic 20px sans-serif';
+      wrapCanvasText(ctx, `“${motto}”`, W / 2, cy + 212, W - 190, 28);
+
+      let barY = 550;
+      const barStep = bars.length > 4 ? 64 : 84;
+      bars.forEach(b => {
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText(b.label, 84, barY);
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = m.primary;
+        ctx.fillText(`${b.pct}%`, W - 84, barY);
+
+        drawRoundRect(ctx, 84, barY + 12, W - 168, 16, 8);
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fill();
+
+        const fillW = Math.max(24, ((W - 168) * b.pct) / 100);
+        drawRoundRect(ctx, 84, barY + 12, fillW, 16, 8);
+        ctx.fillStyle = m.primary;
+        ctx.fill();
+
+        barY += barStep;
+      });
+
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(84, H - 115);
+      ctx.lineTo(W - 84, H - 115);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 19px sans-serif';
+      ctx.fillText('64personality · 全维人格测评实验室', 84, H - 72);
+
+      ctx.textAlign = 'right';
+      ctx.fillText(r.timestamp.split(' ')[0], W - 84, H - 72);
+
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `64personality_${r.testId}_${Date.now()}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('✅ 高清分享海报 (PNG) 已成功下载！');
+      } catch (e) {
+        showToast('海报渲染完成，请长按或右键保存图像');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('app-modal').classList.remove('open');
+    }
+
+    function copyReport() {
+      const r = state.result;
+      if (!r) return;
+      const nickPrefix = state.posterNickname.trim() ? `【@${state.posterNickname.trim()} 的专属测评】\n` : '';
+      const text = `${nickPrefix}【64personality · ${r.testName}】\n我的测评结果：${r.headline}\n${r.subHeadline}\n测评时间：${r.timestamp}\n—— 64personality 全维人格测评实验室`;
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('✅ 完整测评报告文案已复制到剪贴板！');
+      } catch (e) {
+        showToast('复制失败，请手动复制文本');
+      }
+      document.body.removeChild(ta);
+    }
+
+    function showToast(msg) {
+      const wrap = document.getElementById('toast-wrap');
+      const el = document.createElement('div');
+      el.className = 'toast-msg';
+      el.textContent = msg;
+      wrap.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => el.remove(), 260);
+      }, 2500);
+    }
+
+    /**
+     * ============================================================================
+     * 十、初始化启动
+     * ============================================================================
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadHistory();
+      render();
+    });
+  </script>
+</body>
+</html>
